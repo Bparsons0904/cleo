@@ -11,16 +11,15 @@ void main() async {
   // Initialize shared preferences for theme storage
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   
-  // Create override for theme provider with shared preferences
-  final themeProvider = initThemeProvider(prefs);
-  
   runApp(
-    
- const   ProviderScope(
+    ProviderScope(
       overrides: [
-        themeControllerProvider.overrideWith((ref) => themeProvider.notifier),
+        // Use overrideWith correctly
+        themeControllerProvider.overrideWith(
+          (ref) => ThemeController(prefs),
+        ),
       ],
-      child: CleoApp(),
+      child: const CleoApp(),
     ),
   );
 }
@@ -36,7 +35,7 @@ class CleoApp extends ConsumerWidget {
     final themeMode = ref.watch(themeControllerProvider);
     
     return MaterialApp(
-      title: 'Cleo',
+      title: 'Kleio',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: CleoTheme.lightTheme,
@@ -61,11 +60,13 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Simulate loading with a delay, then navigate to home screen
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
-        ),
-      );
+      if (mounted) { // Add this check
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      }
     });
   }
 
@@ -79,7 +80,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const FlutterLogo(size: 120),
             const SizedBox(height: 24),
             Text(
-              'Cleo',
+              'Kleio',
               style: Theme.of(context).textTheme.displayLarge,
             ),
             const SizedBox(height: 8),

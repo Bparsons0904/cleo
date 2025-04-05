@@ -11,7 +11,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CleoAppBar(
-        title: 'Cleo',
+        title: 'Kleio',
         showBackButton: false,
         // actions:  [ThemeToggle()],
       ),
@@ -21,7 +21,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Welcome to Cleo',
+              'Welcome to Kleio',
               style: Theme.of(context).textTheme.displayLarge,
             ),
             const SizedBox(height: CleoSpacing.md),
