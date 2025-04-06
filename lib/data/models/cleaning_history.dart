@@ -1,4 +1,6 @@
 // lib/data/models/cleaning_history.dart
+import 'models.dart';
+
 class CleaningHistory {
   final int id;
   final int releaseId;

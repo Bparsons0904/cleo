@@ -8,7 +8,7 @@ import 'core/routing/app_router.dart';
 import 'core/theme/theme.dart';
 
 
-part 'main.g.dart';  // Change this to match your actual package name
+// part 'main.g.dart';  // Change this to match your actual package name
 // Remove the part directive since we're not using code generation here
 // part 'main.g.dart';
 

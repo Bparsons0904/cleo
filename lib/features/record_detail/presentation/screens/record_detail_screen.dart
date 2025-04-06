@@ -6,11 +6,32 @@ import '../../../../data/models/models.dart';
 import '../../../collection/data/providers/collection_providers.dart';
 
 final releaseProvider = FutureProvider.family<Release?, int>((ref, releaseId) async {
-  final collectionAsync = await ref.watch(collectionNotifierProvider.future);
-  return collectionAsync.firstWhere(
-    (release) => release.id == releaseId,
-    orElse: () => throw Exception('Release not found'),
-  );
+  final collectionAsync = ref.watch(collectionNotifierProvider);
+  
+  // Wait for the data to be available
+  if (collectionAsync is AsyncLoading) {
+    // Return a loading state
+    return await Future.delayed(Duration.zero);
+  }
+  
+  if (collectionAsync is AsyncError) {
+    // Fix: Handle potential null error
+    final error = collectionAsync.error;
+    throw error ?? Exception('Unknown error occurred');
+  }
+  
+  // Data is available, now we can use it
+  final collection = collectionAsync.value ?? [];
+  
+  // Find the release
+  try {
+    return collection.firstWhere(
+      (release) => release.id == releaseId,
+      orElse: () => throw Exception('Release not found'),
+    );
+  } catch (e) {
+    throw Exception('Release not found: $e');
+  }
 });
 
 /// Screen that displays record details

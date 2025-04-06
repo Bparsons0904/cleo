@@ -182,14 +182,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    return CleoButtons.primary(
-      onPressed: _isLoading ? null : _submitToken,
-      isLoading: _isLoading,
-      isFullWidth: true,
-      child: const Text('Connect with Discogs'),
-    );
-  }
+Widget _buildSubmitButton() {
+  return CleoButtons.primary(
+    onPressed: _submitToken,
+    isLoading: _isLoading,
+    isFullWidth: true,
+    child: const Text('Connect with Discogs'),
+  );
+}
 
   Widget _buildHelpText() {
     return Column(
