@@ -1,0 +1,17 @@
+targets:
+  $default:
+    builders:
+      # Configure the riverpod_generator
+      riverpod_generator:
+        options:
+          provider_name_suffix: "Provider"
+          provider_family_name_suffix: "Provider"
+        enabled: true
+        generate_for:
+          - lib/**/*.dart
+
+      # Configure the hive_generator
+      hive_generator|hive_generator:
+        enabled: true
+        generate_for:
+          - lib/data/models/**.dart
