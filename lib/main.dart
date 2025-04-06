@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 
+
+import 'config.dart';
 import 'core/di/providers_module.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/theme.dart';
+import 'features/auth/data/providers/auth_providers.dart';
 
 
 // part 'main.g.dart';  // Change this to match your actual package name
@@ -19,19 +22,29 @@ void main() async {
   // Initialize shared preferences
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   
+  // Initialize app configuration
+  AppConfig().initialize(environment: Environment.development);
+  
+  // Create a container to pre-initialize providers
+  final container = ProviderContainer(
+    overrides: [
+      themeControllerProvider.overrideWith(
+        (ref) => ThemeController(prefs),
+      ),
+      sharedPreferencesProvider.overrideWith(
+        (ref) => Future.value(prefs),
+      ),
+    ],
+  );
+
+  // Pre-initialize auth state before showing any UI
+  print('🔐 Pre-initializing auth state...');
+  await container.read(authStateNotifierProvider.notifier).checkInitialAuthStatus();
+  print('🔐 Auth state initialized!');
+  
   runApp(
-    ProviderScope(
-      overrides: [
-        // Override theme controller provider with shared preferences
-        themeControllerProvider.overrideWith(
-          (ref) => ThemeController(prefs),
-        ),
-        // Fix the override for shared preferences
-        // Use specific override method based on how the provider is defined
-        sharedPreferencesProvider.overrideWith(
-          (ref) => Future.value(prefs),
-        ),
-      ],
+    UncontrolledProviderScope(
+      container: container,
       child: const KleioApp(),
     ),
   );

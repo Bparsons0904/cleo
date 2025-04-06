@@ -74,6 +74,8 @@ lib/
 
    ```bash
    flutter pub run build_runner build --delete-conflicting-outputs
+   # For development
+   flutter pub run build_runner watch --delete-conflicting-outputs
    ```
 
 4. Run the app:

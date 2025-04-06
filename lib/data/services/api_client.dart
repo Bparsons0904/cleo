@@ -1,13 +1,15 @@
 // lib/data/services/api_client.dart
+import 'package:cleo/config.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
   late final Dio _dio;
-  final String baseUrl;
-
-  ApiClient({required this.baseUrl}) {
+  
+  ApiClient() {
+    final baseUrl = AppConfig().baseUrl;
+    
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
@@ -26,6 +28,31 @@ class ApiClient {
       ),
     );
 
+    // In your ApiClient class, modify the interceptors
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          print('🌐 REQUEST[${options.method}] => PATH: ${options.path}');
+          print('Headers: ${options.headers}');
+          print('Body: ${options.data}');
+          return _onRequest(options, handler);
+        },
+        onResponse: (response, handler) {
+          print('✅ RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+          print('Response: ${response.data}');
+          return _onResponse(response, handler);
+        },
+        onError: (error, handler) {
+          print('❌ ERROR[${error.response?.statusCode}] => PATH: ${error.requestOptions.path}');
+          print('Error: ${error.message}');
+          if (error.response != null) {
+            print('Response data: ${error.response?.data}');
+          }
+          return _onError(error, handler);
+        },
+      ),
+    );
+
     // Add logging interceptor in debug mode
     if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
@@ -39,20 +66,25 @@ class ApiClient {
     }
   }
 
-  // Intercept request to add auth token
-  void _onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
+// In the ApiClient class, let's add more debugging
+void _onRequest(
+  RequestOptions options,
+  RequestInterceptorHandler handler,
+) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
 
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-
-    handler.next(options);
+  print('🚀 Making request to: ${options.baseUrl}${options.path}');
+  
+  if (token != null) {
+    options.headers['Authorization'] = 'Bearer $token';
+    print('🔐 Token found in storage, adding to request');
+  } else {
+    print('🔐 No token found in storage');
   }
+
+  handler.next(options);
+}
 
   // Response interceptor (you can process common response patterns here)
   void _onResponse(
@@ -82,7 +114,15 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
-    return _dio.get(path, queryParameters: queryParameters);
+    print('🔍 Making GET request to: ${_dio.options.baseUrl}$path');
+    try {
+      final response = await _dio.get(path, queryParameters: queryParameters);
+      print('✅ GET request successful: ${response.statusCode}');
+      return response;
+    } catch (e) {
+      print('❌ GET request failed: $e');
+      rethrow;
+    }
   }
 
   // POST request
@@ -111,4 +151,6 @@ class ApiClient {
   }) async {
     return _dio.delete(path, data: data, queryParameters: queryParameters);
   }
+
 }
+

@@ -1,3 +1,4 @@
+import 'package:cleo/features/auth/data/providers/auth_providers.dart';
 import 'package:cleo/main.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -32,33 +33,38 @@ class AppRoutes {
 /// Provider for the GoRouter instance
 @riverpod
 GoRouter appRouter(AppRouterRef ref) {
-  final authState = ref.watch(authStateProvider);
-  
-  return GoRouter(
+  final authStatus = ref.watch(authStatusProvider);
+
+return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
-    redirect: (context, state) async {
-      // Get auth status from preferences
-      final prefs = await SharedPreferences.getInstance();
-      final hasToken = prefs.containsKey('auth_token');
-      
-      // Auth required paths
+    redirect: (context, state) {
+      // Simplified redirect logic based on auth status
       final bool isAuthRoute = state.matchedLocation == AppRoutes.auth;
       final bool isSplashRoute = state.matchedLocation == AppRoutes.splash;
       
-      // If the user is not logged in and not on auth or splash screen, redirect to auth
-      if (!hasToken && !isAuthRoute && !isSplashRoute) {
+      // If not authenticated and not on auth or splash screen, go to auth
+      if (authStatus == AuthenticationStatus.unauthenticated && 
+          !isAuthRoute && 
+          !isSplashRoute) {
         return AppRoutes.auth;
       }
       
-      // If the user is logged in and on auth or splash screen, redirect to home
-      if (hasToken && (isAuthRoute || isSplashRoute)) {
+      // If authenticated and on auth or splash screen, go to home
+      if (authStatus == AuthenticationStatus.authenticated && 
+          (isAuthRoute || isSplashRoute)) {
         return AppRoutes.home;
+      }
+      
+      // If there's an error with auth, go to auth screen
+      if (authStatus == AuthenticationStatus.error && !isAuthRoute) {
+        return AppRoutes.auth;
       }
       
       // No redirect needed
       return null;
     },
+
     routes: [
       GoRoute(
         path: AppRoutes.splash,

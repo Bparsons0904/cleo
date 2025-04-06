@@ -1,3 +1,4 @@
+// lib/features/auth/data/providers/auth_providers.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/di/providers_module.dart';
@@ -5,26 +6,73 @@ import '../../../../data/models/models.dart';
 
 part 'auth_providers.g.dart';
 
-/// Provider for the authentication state
-@riverpod
+// Enum to represent the authentication state
+enum AuthenticationStatus {
+  initial,
+  authenticated,
+  unauthenticated,
+  error,
+}
+
+// Provider for the combined auth state
+@Riverpod(keepAlive: true)
 class AuthStateNotifier extends _$AuthStateNotifier {
   @override
-  AsyncValue<AuthPayload?> build() {
-    _loadAuthStatus();
+  AsyncValue<AuthStateData> build() {
+    // _checkInitialAuthStatus();
+    // Start with loading state
+
+    checkInitialAuthStatus();
     return const AsyncValue.loading();
   }
 
-  /// Loads the current authentication status
-  Future<void> _loadAuthStatus() async {
+  // Initial auth status check
+  Future<void> checkInitialAuthStatus() async {
     state = const AsyncValue.loading();
     
     try {
+      // Always check auth status with the server regardless of token
       final authRepository = ref.read(authRepositoryProvider);
-      final authStatus = await authRepository.getAuthStatus();
+      print('📡 Getting initial auth status from server...');
       
-      state = AsyncValue.data(authStatus);
+      try {
+        // Try to get auth status from server
+        final authPayload = await authRepository.getAuthStatus();
+        print('🔑 Successfully got auth status from server');
+        
+        // If we reach here, we're authenticated
+        state = AsyncValue.data(
+          AuthStateData(
+            status: AuthenticationStatus.authenticated,
+            payload: authPayload,
+          ),
+        );
+      } catch (error) {
+        print('❌ Server error: $error');
+        
+        // Check local token as fallback
+        final hasToken = await authRepository.hasToken();
+        print('🔐 Fallback check - Has token: $hasToken');
+        
+        if (hasToken) {
+          // We have a token, but couldn't connect to server
+          state = AsyncValue.data(
+            AuthStateData(
+              status: AuthenticationStatus.error,
+              error: 'Could not connect to server: $error',
+            ),
+          );
+        } else {
+          // No token, definitely unauthenticated
+          state = AsyncValue.data(
+            const AuthStateData(
+              status: AuthenticationStatus.unauthenticated,
+            ),
+          );
+        }
+      }
     } catch (error, stackTrace) {
-      // If there's an error, the user is likely not authenticated
+      print('🔐 Error in auth check process: $error');
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -38,10 +86,15 @@ class AuthStateNotifier extends _$AuthStateNotifier {
       final success = await authRepository.saveToken(token);
       
       if (success) {
-        await _loadAuthStatus();
+        await checkInitialAuthStatus();
         return true;
       } else {
-        state = AsyncValue.error('Failed to save token', StackTrace.current);
+        state = AsyncValue.data(
+          AuthStateData(
+            status: AuthenticationStatus.error,
+            error: 'Failed to save token',
+          ),
+        );
         return false;
       }
     } catch (error, stackTrace) {
@@ -56,33 +109,57 @@ class AuthStateNotifier extends _$AuthStateNotifier {
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.logout();
       
-      state = const AsyncValue.data(null);
+      state = AsyncValue.data(
+        const AuthStateData(
+          status: AuthenticationStatus.unauthenticated,
+        ),
+      );
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 }
 
-/// Provider for folders in the collection
+// Data class to hold auth state
+class AuthStateData {
+  final AuthenticationStatus status;
+  final AuthPayload? payload;
+  final String? error;
+  
+  const AuthStateData({
+    required this.status,
+    this.payload,
+    this.error,
+  });
+}
+
+// Provider specifically for auth status enum
+@riverpod
+AuthenticationStatus authStatus(AuthStatusRef ref) {
+  final authState = ref.watch(authStateNotifierProvider);
+  
+  return authState.when(
+    data: (data) => data.status,
+    loading: () => AuthenticationStatus.initial,
+    error: (_, __) => AuthenticationStatus.error,
+  );
+}
+
+// Keep the original isAuthenticated provider, but adapt it
+@riverpod
+bool isAuthenticated(IsAuthenticatedRef ref) {
+  final status = ref.watch(authStatusProvider);
+  return status == AuthenticationStatus.authenticated;
+}
+
+// Provider for folders in the collection
 @riverpod
 List<Folder> folders(FoldersRef ref) {
   final authState = ref.watch(authStateNotifierProvider);
   
   return authState.when(
-    data: (payload) => payload?.folders ?? [],
+    data: (data) => data.payload?.folders ?? [],
     loading: () => [],
     error: (_, __) => [],
-  );
-}
-
-/// Provider for checking if user is authenticated
-@riverpod
-bool isAuthenticated(IsAuthenticatedRef ref) {
-  final authState = ref.watch(authStateNotifierProvider);
-  
-  return authState.when(
-    data: (payload) => payload != null && payload.token.isNotEmpty,
-    loading: () => false,
-    error: (_, __) => false,
   );
 }

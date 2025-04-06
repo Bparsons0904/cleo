@@ -1,3 +1,4 @@
+// lib/core/di/providers_module.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +21,8 @@ Future<SharedPreferences> sharedPreferences(SharedPreferencesRef ref) {
 /// Provider for the API client
 @riverpod
 ApiClient apiClient(ApiClientRef ref) {
-  return ApiClient(baseUrl: 'https://api.kleioapp.com');
+  // Use the no-args constructor since it uses AppConfig internally
+  return ApiClient();
 }
 
 /// Provider for AuthRepository
