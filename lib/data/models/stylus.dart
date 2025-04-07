@@ -27,21 +27,38 @@ class Stylus {
   });
 
   factory Stylus.fromJson(Map<String, dynamic> json) {
+    // Add debug printing
+    print("Parsing Stylus: ${json['name']}");
+    
     return Stylus(
-      id: json['id'],
-      name: json['name'],
-      manufacturer: json['manufacturer'],
-      expectedLifespan: json['expected_lifespan'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      manufacturer: json['manufacturer'],  // Already nullable
+      expectedLifespan: json['expected_lifespan'], // Already nullable
       purchaseDate: json['purchase_date'] != null
           ? DateTime.parse(json['purchase_date'])
           : null,
-      active: json['active'],
-      primary: json['primary'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      owned: json['owned'],
-      baseModel: json['base_model'],
+      active: json['active'] ?? false,
+      primary: json['primary'] ?? false,
+      createdAt: _parseDateTime(json['created_at']),
+      updatedAt: _parseDateTime(json['updated_at']),
+      owned: json['owned'] ?? true,
+      baseModel: json['base_model'] ?? false,
     );
+  }
+
+  // Helper method for safely parsing DateTime
+  static DateTime _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) {
+      return DateTime.now();
+    }
+    
+    try {
+      return DateTime.parse(dateValue.toString());
+    } catch (e) {
+      print("Error parsing date: $e");
+      return DateTime.now();
+    }
   }
 
   Map<String, dynamic> toJson() {

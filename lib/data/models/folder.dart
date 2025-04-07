@@ -18,10 +18,10 @@ class Folder {
 
   factory Folder.fromJson(Map<String, dynamic> json) {
     return Folder(
-      id: json['id'],
-      name: json['name'],
-      count: json['count'],
-      resourceUrl: json['resource_url'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      count: json['count'] ?? 0,
+      resourceUrl: json['resource_url'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );

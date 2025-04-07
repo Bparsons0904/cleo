@@ -1,32 +1,27 @@
-// lib/data/models/release_note.dart
 class ReleaseNote {
-  final int id;
   final int releaseId;
-  final String content;
-  final DateTime createdAt;
+  final int fieldId;
+  final String value;
 
   ReleaseNote({
-    required this.id,
     required this.releaseId,
-    required this.content,
-    required this.createdAt,
+    required this.fieldId,
+    required this.value,
   });
 
   factory ReleaseNote.fromJson(Map<String, dynamic> json) {
     return ReleaseNote(
-      id: json['id'],
-      releaseId: json['release_id'],
-      content: json['content'],
-      createdAt: DateTime.parse(json['created_at']),
+      releaseId: json['releaseId'] ?? 0,
+      fieldId: json['fieldId'] ?? 0,
+      value: json['value'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'release_id': releaseId,
-      'content': content,
-      'created_at': createdAt.toIso8601String(),
+      'releaseId': releaseId,
+      'fieldId': fieldId,
+      'value': value,
     };
   }
 }

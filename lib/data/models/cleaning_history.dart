@@ -24,10 +24,10 @@ class CleaningHistory {
 
   factory CleaningHistory.fromJson(Map<String, dynamic> json) {
     return CleaningHistory(
-      id: json['id'],
-      releaseId: json['release_id'],
+      id: json['id'] ?? 0,
+      releaseId: json['release_id'] ?? 0,
       cleanedAt: DateTime.parse(json['cleaned_at']),
-      notes: json['notes'],
+      notes: json['notes'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       release: json['release'] != null

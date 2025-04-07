@@ -23,15 +23,18 @@ class AuthRepository {
   }
 
   // Method to check auth status and get user data
-  Future<AuthPayload> getAuthStatus() async {
-    print('📡 Checking auth status at endpoint: /auth');
+// In AuthRepository class
+Future<AuthPayload> getAuthStatus() async {
+  print('📡 Checking auth status at endpoint: /auth');
+  try {
+    final response = await _apiClient.get('/auth');
+    print('🔑 Auth status response received: ${response.statusCode}');
+    
+    // If we got here, we have a token in the response
     try {
-      final response = await _apiClient.get('/auth');
-      print('🔑 Auth status response received: ${response.statusCode}');
-      print('Response data: ${response.data}');
-      
-      // If we got here, we have a token in the response
+      print('Attempting to parse AuthPayload');
       final authPayload = AuthPayload.fromJson(response.data);
+      print('Successfully parsed AuthPayload');
       
       // Save the token if it's in the response
       if (authPayload.token.isNotEmpty) {
@@ -41,21 +44,31 @@ class AuthRepository {
       }
       
       return authPayload;
-    } on DioException catch (e) {
-      print('🚫 Error checking auth status: ${e.message}');
-      print('Error type: ${e.type}');
-      if (e.response != null) {
-        print('Error status: ${e.response?.statusCode}');
-        print('Error data: ${e.response?.data}');
+    } catch (e, stackTrace) {
+      print('❌ Error parsing AuthPayload: $e');
+      print('Stack trace: $stackTrace');
+      
+      // Try to parse at least the token
+      if (response.data is Map && response.data.containsKey('token')) {
+        print('Token found, creating minimal AuthPayload');
+        return AuthPayload(
+          token: response.data['token'],
+          syncingData: false,
+          releases: [],
+          styluses: [],
+          playHistory: [],
+          folders: [],
+        );
       }
       
-      if (e.response?.statusCode == 401) {
-        print('🚫 Unauthorized, clearing token');
-        await logout();
-      }
-      throw _handleError(e);
+      rethrow;
     }
+  } on DioException catch (e) {
+    print('🚫 Error checking auth status: ${e.message}');
+    // Rest of error handling
+    rethrow;
   }
+}
 
   Future<bool> saveToken(String token) async {
     try {

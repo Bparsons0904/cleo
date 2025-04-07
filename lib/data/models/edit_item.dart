@@ -20,13 +20,13 @@ class EditItem {
 
   factory EditItem.fromJson(Map<String, dynamic> json) {
     return EditItem(
-      id: json['id'],
-      type: json['type'],
+      id: json['id'] ?? 0,
+      type: json['type'] ?? '',
       date: DateTime.parse(json['date']),
-      notes: json['notes'],
-      stylus: json['stylus'],
-      stylusId: json['stylus_id'],
-      releaseId: json['release_id'],
+      notes: json['notes'] ?? '',
+      stylus: json['stylus'] ?? '',
+      stylusId: json['stylus_id'] ?? 0,
+      releaseId: json['release_id'] ?? 0,
     );
   }
 

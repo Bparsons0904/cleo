@@ -1,4 +1,6 @@
 // lib/data/services/api_client.dart
+import 'dart:convert';
+
 import 'package:cleo/config.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -88,13 +90,53 @@ void _onRequest(
 
   // Response interceptor (you can process common response patterns here)
   void _onResponse(
-    Response response,
-    ResponseInterceptorHandler handler,
-  ) {
-    // Process successful responses if needed
-    handler.next(response);
+  Response response,
+  ResponseInterceptorHandler handler,
+) {
+  if (response.requestOptions.path.contains('/auth')) {
+    print("===== BEGIN AUTH RESPONSE DATA =====");
+    
+    // If the response contains 'releases', log the first one in detail
+    if (response.data is Map && response.data.containsKey('releases') && 
+        response.data['releases'] is List && response.data['releases'].isNotEmpty) {
+      
+      final firstRelease = response.data['releases'][0];
+      print("First release:");
+      print(const JsonEncoder.withIndent('  ').convert(firstRelease));
+      
+      // Log key field types for the first release
+      print("id: ${firstRelease['id']} (${firstRelease['id'].runtimeType})");
+      print("title: ${firstRelease['title']} (${firstRelease['title'].runtimeType})");
+      
+      // Log specific nested structure details
+      if (firstRelease.containsKey('labels') && 
+          firstRelease['labels'] is List && 
+          firstRelease['labels'].isNotEmpty) {
+        
+        final firstLabel = firstRelease['labels'][0];
+        print("First label:");
+        print(const JsonEncoder.withIndent('  ').convert(firstLabel));
+        
+        if (firstLabel.containsKey('label')) {
+          print("Label object:");
+          print(const JsonEncoder.withIndent('  ').convert(firstLabel['label']));
+          
+          // Log each field type
+          final labelObj = firstLabel['label'];
+          if (labelObj is Map) {
+            labelObj.forEach((key, value) {
+              print("$key: $value (${value?.runtimeType})");
+            });
+          }
+        }
+      }
+    }
+    
+    print("===== END AUTH RESPONSE DATA =====");
   }
-
+  
+  handler.next(response);
+}
   // Error interceptor
   void _onError(
     DioException err,

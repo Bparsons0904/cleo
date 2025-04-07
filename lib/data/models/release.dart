@@ -55,19 +55,19 @@ class Release {
   // fromJson factory constructor
   factory Release.fromJson(Map<String, dynamic> json) {
     return Release(
-      id: json['id'],
-      instanceId: json['instance_id'],
-      folderId: json['folder_id'],
-      rating: json['rating'],
-      title: json['title'],
-      year: json['year'],
-      resourceUrl: json['resource_url'],
-      thumb: json['thumb'],
-      coverImage: json['cover_image'],
+      id: json['id'] ?? 0,
+      instanceId: json['instance_id'] ?? 0,
+      folderId: json['folder_id'] ?? 0,
+      rating: json['rating'] ?? 0,
+      title: json['title'] ?? '',
+      year: json['year'], // Already nullable
+      resourceUrl: json['resource_url'] ?? '',
+      thumb: json['thumb'] ?? '',
+      coverImage: json['cover_image'] ?? '',
       playDuration: json['play_duration'],
-      playDurationEstimated: json['play_duration_estimated'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      playDurationEstimated: json['play_duration_estimated'] ?? false,
+      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
       artists: (json['artists'] as List?)
           ?.map((artist) => ReleaseArtist.fromJson(artist))
           .toList() ?? [],

@@ -1,9 +1,8 @@
 import 'package:cleo/features/auth/data/providers/auth_providers.dart';
 import 'package:cleo/main.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/collection/presentation/screens/collection_screen.dart';
@@ -32,7 +31,7 @@ class AppRoutes {
 
 /// Provider for the GoRouter instance
 @riverpod
-GoRouter appRouter(AppRouterRef ref) {
+GoRouter appRouter(Ref ref) {
   final authStatus = ref.watch(authStatusProvider);
 
 return GoRouter(
@@ -74,7 +73,6 @@ return GoRouter(
         path: AppRoutes.auth,
         builder: (context, state) => const AuthScreen(),
       ),
-      // Shell route for main app screens with bottom navigation
       ShellRoute(
         builder: (context, state, child) {
           return AppScaffold(child: child);
@@ -102,7 +100,6 @@ return GoRouter(
           ),
         ],
       ),
-      // Route for record detail (could be modal or full screen)
       GoRoute(
         path: AppRoutes.recordDetail,
         builder: (context, state) {

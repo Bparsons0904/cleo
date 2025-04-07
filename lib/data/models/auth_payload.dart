@@ -4,6 +4,7 @@ import 'play_history.dart';
 import 'release.dart';
 import 'stylus.dart';
 
+// lib/data/models/auth_payload.dart
 class AuthPayload {
   final String token;
   final DateTime? lastSync;
@@ -24,24 +25,78 @@ class AuthPayload {
   });
 
   factory AuthPayload.fromJson(Map<String, dynamic> json) {
+    print("Parsing AuthPayload");
+    
+    // Parse releases with error handling
+    List<Release> parsedReleases = [];
+    if (json['releases'] is List) {
+      try {
+        parsedReleases = (json['releases'] as List)
+            .map((release) => Release.fromJson(release))
+            .toList();
+        print("Successfully parsed ${parsedReleases.length} releases");
+      } catch (e) {
+        print("Error parsing releases: $e");
+      }
+    }
+    
+    // Parse styluses with error handling
+    List<Stylus> parsedStyluses = [];
+    if (json['stylus'] is List) {
+      try {
+        parsedStyluses = (json['stylus'] as List)
+            .map((stylus) {
+              try {
+                return Stylus.fromJson(stylus);
+              } catch (e) {
+                print("Error parsing individual stylus: $e");
+                return null;
+              }
+            })
+            .whereType<Stylus>()  // Filter out nulls
+            .toList();
+        print("Successfully parsed ${parsedStyluses.length} styluses");
+      } catch (e) {
+        print("Error parsing styluses: $e");
+      }
+    }
+    
+    // Parse play history with error handling
+    List<PlayHistory> parsedPlayHistory = [];
+    if (json['playHistory'] is List) {
+      try {
+        parsedPlayHistory = (json['playHistory'] as List)
+            .map((play) => PlayHistory.fromJson(play))
+            .toList();
+        print("Successfully parsed ${parsedPlayHistory.length} play history entries");
+      } catch (e) {
+        print("Error parsing play history: $e");
+      }
+    }
+    
+    // Parse folders with error handling
+    List<Folder> parsedFolders = [];
+    if (json['folders'] is List) {
+      try {
+        parsedFolders = (json['folders'] as List)
+            .map((folder) => Folder.fromJson(folder))
+            .toList();
+        print("Successfully parsed ${parsedFolders.length} folders");
+      } catch (e) {
+        print("Error parsing folders: $e");
+      }
+    }
+    
     return AuthPayload(
-      token: json['token'],
+      token: json['token'] ?? '',
       lastSync: json['lastSync'] != null 
           ? DateTime.parse(json['lastSync']) 
           : null,
       syncingData: json['syncingData'] ?? false,
-      releases: (json['releases'] as List?)
-          ?.map((release) => Release.fromJson(release))
-          .toList() ?? [],
-      styluses: (json['stylus'] as List?)
-          ?.map((stylus) => Stylus.fromJson(stylus))
-          .toList() ?? [],
-      playHistory: (json['playHistory'] as List?)
-          ?.map((play) => PlayHistory.fromJson(play))
-          .toList() ?? [],
-      folders: (json['folders'] as List?)
-          ?.map((folder) => Folder.fromJson(folder))
-          .toList() ?? [],
+      releases: parsedReleases,
+      styluses: parsedStyluses,
+      playHistory: parsedPlayHistory,
+      folders: parsedFolders,
     );
   }
 

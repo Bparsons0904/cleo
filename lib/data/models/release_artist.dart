@@ -1,4 +1,3 @@
-// lib/data/models/release_artist.dart
 import 'models.dart';
 
 class ReleaseArtist {
@@ -22,9 +21,9 @@ class ReleaseArtist {
 
   factory ReleaseArtist.fromJson(Map<String, dynamic> json) {
     return ReleaseArtist(
-      releaseId: json['release_id'],
-      artistId: json['artist_id'],
-      joinRelation: json['join_relation'] ?? '',
+      releaseId: json['releaseId'] ?? 0,
+      artistId: json['artistId'] ?? 0,
+      joinRelation: json['joinRelation'] ?? '',
       anv: json['anv'] ?? '',
       tracks: json['tracks'] ?? '',
       role: json['role'] ?? '',
@@ -34,12 +33,13 @@ class ReleaseArtist {
 
   Map<String, dynamic> toJson() {
     return {
-      'release_id': releaseId,
-      'artist_id': artistId,
-      'join_relation': joinRelation,
+      'releaseId': releaseId,
+      'artistId': artistId,
+      'joinRelation': joinRelation,
       'anv': anv,
       'tracks': tracks,
       'role': role,
+      'artist': artist?.toJson(),
     };
   }
 }

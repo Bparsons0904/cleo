@@ -12,7 +12,7 @@ class Style {
     // Handle both string ID and integer ID cases
     return Style(
       id: json['id'] is String ? int.parse(json['id']) : json['id'],
-      name: json['name'],
+      name: json['name'] ?? '',
     );
   }
 

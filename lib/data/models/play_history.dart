@@ -28,11 +28,11 @@ class PlayHistory {
 
   factory PlayHistory.fromJson(Map<String, dynamic> json) {
     return PlayHistory(
-      id: json['id'],
-      releaseId: json['release_id'],
-      stylusId: json['stylus_id'],
+      id: json['id'] ?? 0,
+      releaseId: json['release_id'] ?? 0,
+      stylusId: json['stylus_id'] ?? 0,
       playedAt: DateTime.parse(json['played_at']),
-      notes: json['notes'],
+      notes: json['notes'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       release: json['release'] != null

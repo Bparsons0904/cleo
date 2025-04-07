@@ -1,4 +1,3 @@
-// lib/data/models/track.dart
 class Track {
   final int id;
   final int releaseId;
@@ -6,6 +5,8 @@ class Track {
   final String title;
   final String durationText;
   final int durationSeconds;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   Track({
     required this.id,
@@ -14,27 +15,37 @@ class Track {
     required this.title,
     required this.durationText,
     required this.durationSeconds,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Track.fromJson(Map<String, dynamic> json) {
     return Track(
-      id: json['id'],
-      releaseId: json['release_id'],
-      position: json['position'],
-      title: json['title'],
-      durationText: json['duration_text'] ?? '',
-      durationSeconds: json['duration_seconds'] ?? 0,
+      id: json['id'] ?? 0,
+      releaseId: json['releaseId'] ?? 0,
+      position: json['position'] ?? '',
+      title: json['title'] ?? '',
+      durationText: json['durationText'] ?? '',
+      durationSeconds: json['durationSeconds'] ?? 0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime(1),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime(1),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'release_id': releaseId,
+      'releaseId': releaseId,
       'position': position,
       'title': title,
-      'duration_text': durationText,
-      'duration_seconds': durationSeconds,
+      'durationText': durationText,
+      'durationSeconds': durationSeconds,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 }

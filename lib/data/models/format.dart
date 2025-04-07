@@ -1,34 +1,37 @@
-// lib/data/models/format.dart
 class Format {
+  final int id;
+  final int releaseId;
   final String name;
-  final String description;
-  final List<String> descriptions;
   final int qty;
+  final List<String> descriptions;
 
   Format({
+    required this.id,
+    required this.releaseId,
     required this.name,
-    required this.description,
-    required this.descriptions,
     required this.qty,
+    required this.descriptions,
   });
 
   factory Format.fromJson(Map<String, dynamic> json) {
     return Format(
-      name: json['name'],
-      description: json['description'] ?? '',
+      id: json['id'] ?? 0,
+      releaseId: json['releaseId'] ?? 0,
+      name: json['name'] ?? '',
+      qty: json['qty'] ?? 0,
       descriptions: (json['descriptions'] as List?)
           ?.map((desc) => desc.toString())
           .toList() ?? [],
-      qty: json['qty'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      'releaseId': releaseId,
       'name': name,
-      'description': description,
-      'descriptions': descriptions,
       'qty': qty,
+      'descriptions': descriptions,
     };
   }
 }

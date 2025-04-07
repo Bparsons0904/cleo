@@ -12,9 +12,9 @@ class Artist {
 
   factory Artist.fromJson(Map<String, dynamic> json) {
     return Artist(
-      id: json['id'],
-      name: json['name'],
-      resourceUrl: json['resource_url'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      resourceUrl: json['resource_url'] ?? '',
     );
   }
 
