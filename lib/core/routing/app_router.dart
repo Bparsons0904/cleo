@@ -1,16 +1,18 @@
-import 'package:cleo/features/auth/data/providers/auth_providers.dart';
-import 'package:cleo/main.dart';
+// lib/core/routing/app_router.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/auth/data/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/collection/presentation/screens/collection_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/play_history/presentation/screens/log_play_screen.dart';
 import '../../features/play_history/presentation/screens/play_history_screen.dart';
 import '../../features/record_detail/presentation/screens/record_detail_screen.dart';
 import '../../features/stylus/presentation/screens/stylus_screen.dart';
 import '../../features/analytics/presentation/screens/analytics_screen.dart';
+import '../../main.dart';
 import '../widgets/app_scaffold.dart';
 
 part 'app_router.g.dart';
@@ -34,7 +36,7 @@ class AppRoutes {
 GoRouter appRouter(Ref ref) {
   final authStatus = ref.watch(authStatusProvider);
 
-return GoRouter(
+  return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     redirect: (context, state) {
@@ -83,6 +85,10 @@ return GoRouter(
             builder: (context, state) => const HomeScreen(),
           ),
           GoRoute(
+            path: AppRoutes.logPlay,
+            builder: (context, state) => const LogPlayScreen(),
+          ),
+          GoRoute(
             path: AppRoutes.collection,
             builder: (context, state) => const CollectionScreen(),
           ),
@@ -111,7 +117,7 @@ return GoRouter(
   );
 }
 
-/// Authentication state provider - this is a placeholder for now
+/// Authentication state provider
 @riverpod
 class AuthState extends _$AuthState {
   @override

@@ -1,3 +1,4 @@
+// lib/core/widgets/app_scaffold.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../routing/app_router.dart';
@@ -44,8 +45,8 @@ class _AppScaffoldState extends State<AppScaffold> {
         currentIndex: _calculateSelectedIndex(context),
         onTap: (index) => _onItemTapped(index, context),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -78,7 +79,7 @@ class _AppScaffoldState extends State<AppScaffold> {
         context.go(AppRoutes.home);
         break;
       case 1:
-        context.push(AppRoutes.logPlay);
+        context.go(AppRoutes.logPlay);
         break;
       case 2:
         context.go(AppRoutes.collection);
