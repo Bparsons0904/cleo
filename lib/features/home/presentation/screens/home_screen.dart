@@ -1,378 +1,255 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../collection/data/providers/collection_providers.dart';
 
-/// Home screen for the Cleo app.
-class HomeScreen extends StatelessWidget {
+/// Home screen for the Kleio app.
+class HomeScreen extends ConsumerWidget {
   /// Constructor
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: const CleoAppBar(
-        title: 'Kleio',
-        showBackButton: false,
-        // actions:  [ThemeToggle()],
+      appBar: AppBar(
+        title: const Text('Kleio'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {
+              // Show more options
+              showModalBottomSheet(
+                context: context,
+                builder: (context) => _buildMoreOptions(context),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: CleoSpacing.pagePadding,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Welcome to Kleio',
-              style: Theme.of(context).textTheme.displayLarge,
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+              width: double.infinity,
+              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.2),
+              child: Column(
+                children: [
+                  Text(
+                    'Welcome to Kleio',
+                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your personal vinyl collection tracker',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: CleoSpacing.md),
-            Text(
-              'Your vinyl collection manager',
-              style: Theme.of(context).textTheme.bodyLarge,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildActionCardsList(context, ref),
             ),
-            const SizedBox(height: CleoSpacing.lg),
-            _buildThemeDemo(context),
-            const SizedBox(height: CleoSpacing.lg),
-            _buildButtonsDemo(context),
-            const SizedBox(height: CleoSpacing.lg),
-            _buildCardsDemo(context),
-            const SizedBox(height: CleoSpacing.lg),
-            _buildLoadingDemo(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildThemeDemo(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Typography',
-          style: Theme.of(context).textTheme.displayMedium,
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        Card(
-          child: Padding(
-            padding: CleoSpacing.cardPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Display Large (Headline 1)',
-                  style: Theme.of(context).textTheme.displayLarge,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                Text(
-                  'Display Medium (Headline 2)',
-                  style: Theme.of(context).textTheme.displayMedium,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                Text(
-                  'Title Large (Headline 3)',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                Text(
-                  'Body Large - Main content text that is easy to read',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                Text(
-                  'Body Medium - Secondary text for descriptions',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                Text(
-                  'Body Small - Smaller text for less important content',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                Text(
-                  'Caption - Very small text for labels',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ],
-            ),
+  Widget _buildMoreOptions(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.settings_input_component),
+            title: const Text('Styluses'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push(AppRoutes.stylus);
+            },
           ),
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        Text(
-          'Colors',
-          style: Theme.of(context).textTheme.displayMedium,
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        Card(
-          child: Padding(
-            padding: CleoSpacing.cardPadding,
-            child: Wrap(
-              spacing: CleoSpacing.sm,
-              runSpacing: CleoSpacing.sm,
-              children: [
-                _buildColorBox('Primary', CleoColors.primary, Colors.white),
-                _buildColorBox('Primary Light', CleoColors.primaryLight, Colors.white),
-                _buildColorBox('Primary Dark', CleoColors.primaryDark, Colors.white),
-                _buildColorBox('Success', CleoColors.success, Colors.white),
-                _buildColorBox('Error', CleoColors.error, Colors.white),
-                _buildColorBox('Info', CleoColors.info, Colors.white),
-                _buildColorBox('Surface', CleoColors.surface, CleoColors.textPrimary),
-                _buildColorBox('Surface Container', CleoColors.surfaceContainer, CleoColors.textPrimary),
-                _buildColorBox('Text Primary', CleoColors.textPrimary, Colors.white),
-                _buildColorBox('Text Secondary', CleoColors.textSecondary, Colors.white),
-              ],
-            ),
+          ListTile(
+            leading: const Icon(Icons.analytics),
+            title: const Text('Analytics'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push(AppRoutes.analytics);
+            },
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildColorBox(String name, Color color, Color textColor) {
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: CleoSpacing.borderRadius,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(100),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              // Navigate to settings when implemented
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Settings - Coming soon')),
+              );
+            },
           ),
         ],
       ),
-      child: Center(
-        child: Text(
-          name,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.center,
+    );
+  }
+
+  Widget _buildActionCardsList(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        _buildActionCardMobile(
+          context,
+          'Log Play',
+          'Record when you play a record from your collection.',
+          'Log Now',
+          () => context.push(AppRoutes.logPlay),
+        ),
+        _buildActionCardMobile(
+          context,
+          'View Play Time',
+          'See statistics about your listening habits.',
+          'View Stats',
+          () => context.push(AppRoutes.playHistory),
+        ),
+        _buildActionCardMobile(
+          context,
+          'View Collection',
+          'Browse and search through your vinyl collection.',
+          'View Collection',
+          () => context.push(AppRoutes.collection),
+        ),
+        _buildActionCardMobile(
+          context,
+          'View Equipment',
+          'View, Edit and add equipment to your profile.',
+          'View Equipment',
+          () => context.push(AppRoutes.stylus),
+        ),
+        _buildActionCardMobile(
+          context,
+          'Refresh Collection',
+          'Sync your Kleio collection with your Discogs library.',
+          'Sync Now',
+          () => _syncCollection(context, ref),
+        ),
+        _buildActionCardMobile(
+          context,
+          'View Analytics',
+          'Explore insights about your collection and listening habits.',
+          'View Insights',
+          () => context.push(AppRoutes.analytics),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCardMobile(
+    BuildContext context,
+    String title,
+    String description,
+    String buttonText,
+    VoidCallback onPressed,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Description column (left side)
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 18),
+                    child: Text(
+                      description,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ),
+                // Button column (right side)
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onPressed,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12, 
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(buttonText),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildButtonsDemo(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Buttons',
-          style: Theme.of(context).textTheme.displayMedium,
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        Card(
-          child: Padding(
-            padding: CleoSpacing.cardPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: CleoSpacing.md,
-                  runSpacing: CleoSpacing.md,
-                  children: [
-                    CleoButtons.primary(
-                      onPressed: () {},
-                      child: const Text('Primary Button'),
-                    ),
-                    CleoButtons.secondary(
-                      onPressed: () {},
-                      child: const Text('Secondary Button'),
-                    ),
-                    CleoButtons.text(
-                      onPressed: () {},
-                      child: const Text('Text Button'),
-                    ),
-                    CleoButtons.icon(
-                      onPressed: () {},
-                      icon: Icons.favorite,
-                      tooltip: 'Favorite',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: CleoSpacing.md),
-                Text(
-                  'Loading State',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                Wrap(
-                  spacing: CleoSpacing.md,
-                  runSpacing: CleoSpacing.md,
-                  children: [
-                    CleoButtons.primary(
-                      onPressed: () {},
-                      isLoading: true,
-                      child: const Text('Primary Loading'),
-                    ),
-                    CleoButtons.secondary(
-                      onPressed: () {},
-                      isLoading: true, 
-                      child: const Text('Secondary Loading'),
-                    ),
-                    CleoButtons.text(
-                      onPressed: () {},
-                      isLoading: true,
-                      child: const Text('Text Loading'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: CleoSpacing.md),
-                Text(
-                  'Full Width',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                CleoButtons.primary(
-                  onPressed: () {},
-                  isFullWidth: true,
-                  child: const Text('Full Width Primary'),
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                CleoButtons.secondary(
-                  onPressed: () {},
-                  isFullWidth: true,
-                  child: const Text('Full Width Secondary'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+  void _syncCollection(BuildContext context, WidgetRef ref) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Syncing your collection...'),
+        duration: Duration(seconds: 2),
+      ),
     );
-  }
-
-  Widget _buildCardsDemo(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Cards',
-          style: Theme.of(context).textTheme.displayMedium,
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        CleoCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Basic Card',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: CleoSpacing.sm),
-              Text(
-                'This is a basic card with default styling',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
+    
+    // Actually trigger the sync using the provider
+    final collectionNotifier = ref.read(collectionNotifierProvider.notifier);
+    collectionNotifier.syncCollection().then((_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Collection synced successfully!'),
+            backgroundColor: Colors.green,
           ),
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        CleoCard(
-          onTap: () {},
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tappable Card',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: CleoSpacing.sm),
-              Text(
-                'This card has a tap action, try tapping it!',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
+        );
+      }
+    }).catchError((error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync failed: $error'),
+            backgroundColor: Colors.red,
           ),
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        CleoCard(
-          elevation: 8,
-          margin: const EdgeInsets.all(CleoSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Custom Card',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: CleoSpacing.sm),
-              Text(
-                'This card has custom elevation and margin',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoadingDemo(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Loading Indicators',
-          style: Theme.of(context).textTheme.displayMedium,
-        ),
-        const SizedBox(height: CleoSpacing.md),
-        Card(
-          child: Padding(
-            padding: CleoSpacing.cardPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Wrap(
-                  spacing: CleoSpacing.xl,
-                  runSpacing: CleoSpacing.lg,
-                  alignment: WrapAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        CleoLoading(),
-                        SizedBox(height: CleoSpacing.sm),
-                        Text('Default'),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        CleoLoading(
-                          size: 30,
-                          color: CleoColors.success,
-                        ),
-                        SizedBox(height: CleoSpacing.sm),
-                        Text('Custom Color'),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        CleoLoading(
-                          message: 'Loading...',
-                        ),
-                        SizedBox(height: CleoSpacing.sm),
-                        Text('With Message'),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: CleoSpacing.lg),
-                Text(
-                  'Linear Loading',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: CleoSpacing.sm),
-                const CleoLoading(
-                  isCircular: false,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
+        );
+      }
+    });
   }
 }
