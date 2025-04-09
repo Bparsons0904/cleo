@@ -6,37 +6,18 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../data/models/models.dart';
 import '../../../auth/data/providers/auth_providers.dart';
+import '../../data/providers/log_play_filter_provider.dart';
+import '../widgets/log_play_search_bar.dart';
+import '../widgets/log_play_sort_dropdown.dart';
 
-class LogPlayScreen extends ConsumerStatefulWidget {
+class LogPlayScreen extends ConsumerWidget {
   const LogPlayScreen({super.key});
 
   @override
-  ConsumerState<LogPlayScreen> createState() => _LogPlayScreenState();
-}
-
-class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
-  String _searchQuery = '';
-  String _sortOption = 'Artist (A-Z)';
-  
-  // Sort options for dropdown
-  final List<String> _sortOptions = [
-    'Artist (A-Z)',
-    'Artist (Z-A)',
-    'Album (A-Z)',
-    'Album (Z-A)',
-    'Genre',
-    'Last Played',
-    'Recently Played',
-    'Release Year',
-    'Most Played',
-    'Least Played',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    // Get auth state for releases
-    final authState = ref.watch(authStateNotifierProvider);
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get filtered releases
+    final filteredReleases = ref.watch(filteredLogPlayReleasesProvider);
+    
     return Scaffold(
       appBar: const CleoAppBar(
         title: 'Log Play & Cleaning',
@@ -55,26 +36,19 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
             ),
           ),
           
-          // Search and filter section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Search Your Collection'),
-                const SizedBox(height: 8),
-                _buildSearchField(),
-                const SizedBox(height: 16),
-                const Text('Sort By'),
-                const SizedBox(height: 8),
-                _buildSortDropdown(),
-                const SizedBox(height: 16),
-              ],
-            ),
+          // Search bar
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0),
+            child: LogPlaySearchBar(),
+          ),
+          
+          // Sort dropdown
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: LogPlaySortDropdown(),
           ),
           
           // Collection grid
-          const SizedBox(height: 16),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
@@ -87,87 +61,16 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
           ),
           const SizedBox(height: 8),
           
-          // Collection grid from auth state
+          // Collection grid
           Expanded(
-            child: authState.when(
-              data: (authData) {
-                final releases = authData.payload?.releases ?? [];
-                final filteredReleases = _filterReleases(releases);
-                
-                return _buildCollectionGrid(filteredReleases);
-              },
-              loading: () => const Center(child: CleoLoading()),
-              error: (error, _) => Center(
-                child: Text('Error loading collection: $error'),
-              ),
-            ),
+            child: _buildCollectionGrid(context, filteredReleases),
           ),
         ],
       ),
     );
   }
   
-  Widget _buildSearchField() {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: 'Search by title or artist...',
-        prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
-      ),
-      onChanged: (value) {
-        setState(() {
-          _searchQuery = value;
-        });
-      },
-    );
-  }
-  
-  Widget _buildSortDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _sortOption,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      isExpanded: true,
-      items: _sortOptions.map((option) {
-        return DropdownMenuItem<String>(
-          value: option,
-          child: Text(option),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) {
-          setState(() {
-            _sortOption = value;
-          });
-        }
-      },
-    );
-  }
-  
-  
-  List<Release> _filterReleases(List<Release> releases) {
-    if (_searchQuery.isEmpty) {
-      return releases;
-    }
-    
-    final query = _searchQuery.toLowerCase();
-    return releases.where((release) {
-      final titleMatch = release.title.toLowerCase().contains(query);
-      final artistMatch = release.artists.any((artist) => 
-        artist.artist?.name.toLowerCase().contains(query) ?? false
-      );
-      return titleMatch || artistMatch;
-    }).toList();
-  }
-  
-  Widget _buildCollectionGrid(List<Release> releases) {
+  Widget _buildCollectionGrid(BuildContext context, List<Release> releases) {
     if (releases.isEmpty) {
       return const Center(
         child: Text('No records found. Try a different search term.'),
@@ -189,12 +92,20 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
       itemCount: releases.length,
       itemBuilder: (context, index) {
         final release = releases[index];
-        return _buildReleaseCard(release);
+        return ReleaseGridItem(release: release);
       },
     );
   }
+}
+
+// Move this to a separate StatelessWidget so it has its own BuildContext
+class ReleaseGridItem extends StatelessWidget {
+  final Release release;
   
-  Widget _buildReleaseCard(Release release) {
+  const ReleaseGridItem({super.key, required this.release});
+  
+  @override
+  Widget build(BuildContext context) {
     // Get artist name
     final artistName = release.artists.isNotEmpty && release.artists.first.artist != null
         ? release.artists.first.artist!.name
@@ -206,11 +117,11 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showRecordActions(release),
+        onTap: () => _showRecordActions(context, release),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Album cover - using the approach from the original Collection screen
+            // Album cover
             Expanded(
               child: release.thumb.isNotEmpty
                   ? Image.network(
@@ -262,12 +173,14 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildActionButton(
-                    onPressed: () => _logPlay(release),
+                    context: context,
+                    onPressed: () => _logPlay(context, release),
                     color: Colors.green.shade200,
                     icon: Icons.play_arrow,
                   ),
                   _buildActionButton(
-                    onPressed: () => _logCleaning(release),
+                    context: context,
+                    onPressed: () => _logCleaning(context, release),
                     color: Colors.blue.shade200,
                     icon: Icons.cleaning_services,
                   ),
@@ -290,6 +203,7 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
   }
   
   Widget _buildActionButton({
+    required BuildContext context,
     required VoidCallback onPressed,
     required Color color,
     required IconData icon,
@@ -308,14 +222,14 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
     );
   }
   
-  void _showRecordActions(Release release) {
+  void _showRecordActions(BuildContext context, Release release) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => _buildRecordActionsSheet(release),
+      builder: (context) => _buildRecordActionsSheet(context, release),
     );
   }
   
-  Widget _buildRecordActionsSheet(Release release) {
+  Widget _buildRecordActionsSheet(BuildContext context, Release release) {
     // Get artist name
     final artistName = release.artists.isNotEmpty && release.artists.first.artist != null
         ? release.artists.first.artist!.name
@@ -398,7 +312,7 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
           title: const Text('Log Play'),
           onTap: () {
             Navigator.pop(context);
-            _logPlay(release);
+            _logPlay(context, release);
           },
         ),
         ListTile(
@@ -406,7 +320,7 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
           title: const Text('Log Cleaning'),
           onTap: () {
             Navigator.pop(context);
-            _logCleaning(release);
+            _logCleaning(context, release);
           },
         ),
         ListTile(
@@ -414,7 +328,7 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
           title: const Text('Log Play & Cleaning'),
           onTap: () {
             Navigator.pop(context);
-            _logBoth(release);
+            _logBoth(context, release);
           },
         ),
         ListTile(
@@ -422,43 +336,43 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
           title: const Text('View Record Details'),
           onTap: () {
             Navigator.pop(context);
-            _viewRecordDetails(release);
+            _viewRecordDetails(context, release);
           },
         ),
       ],
     );
   }
   
-  void _logPlay(Release release) {
+  void _logPlay(BuildContext context, Release release) {
     // Show a dialog with date and stylus selection
     showDialog(
       context: context,
-      builder: (context) => _buildLogDialog(release, isPlay: true),
+      builder: (context) => _buildLogDialog(context, release, isPlay: true),
     );
   }
   
-  void _logCleaning(Release release) {
+  void _logCleaning(BuildContext context, Release release) {
     // Show a dialog with date selection
     showDialog(
       context: context,
-      builder: (context) => _buildLogDialog(release, isPlay: false),
+      builder: (context) => _buildLogDialog(context, release, isPlay: false),
     );
   }
   
-  void _logBoth(Release release) {
+  void _logBoth(BuildContext context, Release release) {
     // Show a dialog with options for both play and cleaning
     showDialog(
       context: context,
-      builder: (context) => _buildLogBothDialog(release),
+      builder: (context) => _buildLogBothDialog(context, release),
     );
   }
   
-  void _viewRecordDetails(Release release) {
+  void _viewRecordDetails(BuildContext context, Release release) {
     // Navigate to record detail screen
     context.push('/record/${release.id}');
   }
   
-  Widget _buildLogDialog(Release release, {required bool isPlay}) {
+  Widget _buildLogDialog(BuildContext context, Release release, {required bool isPlay}) {
     final title = isPlay ? 'Log Play' : 'Log Cleaning';
     final actionText = isPlay ? 'Play' : 'Cleaning';
     
@@ -567,7 +481,7 @@ class _LogPlayScreenState extends ConsumerState<LogPlayScreen> {
     );
   }
   
-  Widget _buildLogBothDialog(Release release) {
+  Widget _buildLogBothDialog(BuildContext context, Release release) {
     return AlertDialog(
       title: const Text('Log Play & Cleaning'),
       content: Column(
