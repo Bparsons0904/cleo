@@ -1,4 +1,4 @@
-// lib/core/routing/app_router.dart - Updated with new route
+// lib/core/routing/app_router.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -33,15 +33,39 @@ class AppRoutes {
   static const String recordDetail = '/record/:id';
 }
 
+/// Provider for the previous auth status
+final previousAuthStatusProvider = StateProvider<AuthenticationStatus?>((ref) => null);
+
 /// Provider for the GoRouter instance
 @riverpod
 GoRouter appRouter(Ref ref) {
   final authStatus = ref.watch(authStatusProvider);
+  final previousAuthStatus = ref.watch(previousAuthStatusProvider);
+  
+  // Update the previous auth status when the current status changes
+  if (authStatus != previousAuthStatus && previousAuthStatus != null) {
+    // We need to defer the update to avoid changing state during build
+    Future.microtask(() {
+      ref.read(previousAuthStatusProvider.notifier).state = authStatus;
+    });
+  } else if (previousAuthStatus == null) {
+    // Initialize on first run
+    Future.microtask(() {
+      ref.read(previousAuthStatusProvider.notifier).state = authStatus;
+    });
+  }
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     redirect: (context, state) {
+      // Skip redirects for record detail and log play detail
+      // This ensures we stay on these screens when logging plays/cleanings
+      if (state.matchedLocation.startsWith('/record/') || 
+          state.matchedLocation.startsWith('/log-play-detail/')) {
+        return null;
+      }
+      
       // Simplified redirect logic based on auth status
       final bool isAuthRoute = state.matchedLocation == AppRoutes.auth;
       final bool isSplashRoute = state.matchedLocation == AppRoutes.splash;
@@ -115,7 +139,6 @@ GoRouter appRouter(Ref ref) {
           return RecordDetailScreen(releaseId: id);
         },
       ),
-      // Add the new route for Log Play Detail screen
       GoRoute(
         path: AppRoutes.logPlayDetail,
         builder: (context, state) {

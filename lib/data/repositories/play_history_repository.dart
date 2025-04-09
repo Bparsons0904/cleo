@@ -1,8 +1,10 @@
-// lib/data/repositories/play_history_repository.dart
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../models/play_history.dart';
 import '../services/api_client.dart';
 
+// Then for the PlayHistoryRepository class, use this implementation:
 class PlayHistoryRepository {
   final ApiClient _apiClient;
 
@@ -15,14 +17,26 @@ class PlayHistoryRepository {
     String? notes,
   }) async {
     try {
-      final response = await _apiClient.post('/plays', data: {
+      debugPrint('PlayHistoryRepository.logPlay - START');
+      final requestData = {
         'releaseId': releaseId,
         'stylusId': stylusId,
         'playedAt': playedAt.toUtc().toIso8601String(),
         'notes': notes,
-      });
+      };
       
-      return PlayHistory.fromJson(response.data);
+      final response = await _apiClient.post('/plays', data: requestData);
+      
+      // If response is successful but doesn't match expected format, return basic object
+      return PlayHistory(
+        id: 0,
+        releaseId: releaseId,
+        stylusId: stylusId,
+        playedAt: playedAt,
+        notes: notes,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }

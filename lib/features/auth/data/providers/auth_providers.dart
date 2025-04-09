@@ -118,6 +118,24 @@ class AuthStateNotifier extends _$AuthStateNotifier {
       state = AsyncValue.error(error, stackTrace);
     }
   }
+  
+  /// Updates the auth payload without changing the authentication status
+  /// This prevents navigation side effects when refreshing data
+  Future<void> updatePayloadQuietly(AuthPayload authPayload) async {
+    // Only update if we're already in an authenticated state to prevent navigation
+    if (state is AsyncData && (state as AsyncData<AuthStateData>).value.status == AuthenticationStatus.authenticated) {
+      // Create new state that preserves the current status but updates the payload
+      state = AsyncValue.data(
+        AuthStateData(
+          status: AuthenticationStatus.authenticated,
+          payload: authPayload,
+        ),
+      );
+      print('🔄 Auth payload updated quietly');
+    } else {
+      print('⚠️ Cannot update payload quietly when not authenticated');
+    }
+  }
 }
 
 // Data class to hold auth state

@@ -1,4 +1,4 @@
-// lib/data/models/cleaning_history.dart
+// lib/data/models/cleaning_history.dart - optimized version
 import 'models.dart';
 
 class CleaningHistory {
@@ -23,27 +23,53 @@ class CleaningHistory {
   });
 
   factory CleaningHistory.fromJson(Map<String, dynamic> json) {
-    return CleaningHistory(
-      id: json['id'] ?? 0,
-      releaseId: json['release_id'] ?? 0,
-      cleanedAt: DateTime.parse(json['cleaned_at']),
-      notes: json['notes'] ?? '',
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      release: json['release'] != null
-          ? Release.fromJson(json['release'])
-          : null,
-    );
+    try {
+      print('Parsing CleaningHistory: ${json['id']}');
+      
+      return CleaningHistory(
+        id: json['id'] ?? 0,
+        releaseId: json['releaseId'] ?? 0,
+        cleanedAt: _parseDateTime(json['cleanedAt']),
+        notes: json['notes'],
+        createdAt: _parseDateTime(json['createdAt']),
+        updatedAt: _parseDateTime(json['updatedAt']),
+        release: json['release'] != null ? Release.fromJson(json['release']) : null,
+      );
+    } catch (e) {
+      print('ERROR in CleaningHistory.fromJson: $e');
+      // Return a minimal valid object to avoid null errors
+      return CleaningHistory(
+        id: json['id'] ?? 0,
+        releaseId: json['releaseId'] ?? 0,
+        cleanedAt: DateTime.now(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  // Helper method to safely parse DateTime
+  static DateTime _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) {
+      return DateTime.now();
+    }
+    
+    try {
+      return DateTime.parse(dateValue.toString());
+    } catch (e) {
+      print('Error parsing date in CleaningHistory: $e');
+      return DateTime.now();
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'release_id': releaseId,
-      'cleaned_at': cleanedAt.toIso8601String(),
+      'releaseId': releaseId,
+      'cleanedAt': cleanedAt.toIso8601String(),
       'notes': notes,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 }

@@ -1,4 +1,4 @@
-// lib/data/models/release.dart
+// lib/data/models/release.dart - optimized version
 import 'models.dart';
 
 class Release {
@@ -52,76 +52,147 @@ class Release {
     required this.tracks,
   });
 
-  // fromJson factory constructor
+  // fromJson factory constructor with improved parsing
   factory Release.fromJson(Map<String, dynamic> json) {
-    return Release(
-      id: json['id'] ?? 0,
-      instanceId: json['instance_id'] ?? 0,
-      folderId: json['folder_id'] ?? 0,
-      rating: json['rating'] ?? 0,
-      title: json['title'] ?? '',
-      year: json['year'], // Already nullable
-      resourceUrl: json['resource_url'] ?? '',
-      thumb: json['thumb'] ?? '',
-      coverImage: json['cover_image'] ?? '',
-      playDuration: json['play_duration'],
-      playDurationEstimated: json['play_duration_estimated'] ?? false,
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
-      artists: (json['artists'] as List?)
-          ?.map((artist) => ReleaseArtist.fromJson(artist))
-          .toList() ?? [],
-      labels: (json['labels'] as List?)
-          ?.map((label) => ReleaseLabel.fromJson(label))
-          .toList() ?? [],
-      formats: (json['formats'] as List?)
-          ?.map((format) => Format.fromJson(format))
-          .toList() ?? [],
-      genres: (json['genres'] as List?)
-          ?.map((genre) => Genre.fromJson(genre))
-          .toList() ?? [],
-      styles: (json['styles'] as List?)
-          ?.map((style) => Style.fromJson(style))
-          .toList() ?? [],
-      notes: (json['notes'] as List?)
-          ?.map((note) => ReleaseNote.fromJson(note))
-          .toList() ?? [],
-      playHistory: (json['play_history'] as List?)
-          ?.map((play) => PlayHistory.fromJson(play))
-          .toList() ?? [],
-      cleaningHistory: (json['cleaning_history'] as List?)
-          ?.map((cleaning) => CleaningHistory.fromJson(cleaning))
-          .toList() ?? [],
-      tracks: (json['tracks'] as List?)
-          ?.map((track) => Track.fromJson(track))
-          .toList() ?? [],
-    );
+    try {
+      // Parse play history with robust error handling
+      List<PlayHistory> playHistoryList = [];
+      if (json['playHistory'] != null) {
+        try {
+          playHistoryList = (json['playHistory'] as List)
+              .map((play) => PlayHistory.fromJson(play))
+              .toList();
+        } catch (e) {
+          print('Error parsing playHistory in Release: $e');
+        }
+      }
+      
+      // Parse cleaning history with robust error handling
+      List<CleaningHistory> cleaningHistoryList = [];
+      if (json['cleaningHistory'] != null) {
+        try {
+          cleaningHistoryList = (json['cleaningHistory'] as List)
+              .map((cleaning) => CleaningHistory.fromJson(cleaning))
+              .toList();
+        } catch (e) {
+          print('Error parsing cleaningHistory in Release: $e');
+        }
+      }
+      
+      return Release(
+        id: json['id'] ?? 0,
+        instanceId: json['instanceId'] ?? 0,
+        folderId: json['folderId'] ?? 0,
+        rating: json['rating'] ?? 0,
+        title: json['title'] ?? '',
+        year: json['year'],
+        resourceUrl: json['resourceUrl'] ?? '',
+        thumb: json['thumb'] ?? '',
+        coverImage: json['coverImage'] ?? '',
+        playDuration: json['playDuration'],
+        playDurationEstimated: json['playDurationEstimated'] ?? false,
+        createdAt: _parseDateTime(json['createdAt']),
+        updatedAt: _parseDateTime(json['updatedAt']),
+        artists: _parseList<ReleaseArtist>(json['artists'], ReleaseArtist.fromJson),
+        labels: _parseList<ReleaseLabel>(json['labels'], ReleaseLabel.fromJson),
+        formats: _parseList<Format>(json['formats'], Format.fromJson),
+        genres: _parseList<Genre>(json['genres'], Genre.fromJson),
+        styles: _parseList<Style>(json['styles'], Style.fromJson),
+        notes: _parseList<ReleaseNote>(json['notes'], ReleaseNote.fromJson),
+        playHistory: playHistoryList,
+        cleaningHistory: cleaningHistoryList,
+        tracks: _parseList<Track>(json['tracks'], Track.fromJson),
+      );
+    } catch (e) {
+      print('Error parsing Release: $e');
+      // Return a minimal valid Release to avoid null errors
+      return Release(
+        id: json['id'] ?? 0,
+        instanceId: 0,
+        folderId: 0,
+        rating: 0,
+        title: json['title'] ?? 'Unknown',
+        resourceUrl: '',
+        thumb: '',
+        coverImage: '',
+        playDurationEstimated: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        artists: [],
+        labels: [],
+        formats: [],
+        genres: [],
+        styles: [],
+        notes: [],
+        playHistory: [],
+        cleaningHistory: [],
+        tracks: [],
+      );
+    }
+  }
+
+  // Helper method to safely parse DateTime
+  static DateTime _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) {
+      return DateTime.now();
+    }
+    
+    try {
+      return DateTime.parse(dateValue.toString());
+    } catch (e) {
+      print('Error parsing date: $e');
+      return DateTime.now();
+    }
+  }
+  
+  // Helper method to safely parse lists
+  static List<T> _parseList<T>(dynamic jsonList, T Function(Map<String, dynamic>) fromJson) {
+    if (jsonList == null) {
+      return [];
+    }
+    
+    try {
+      return (jsonList as List)
+          .map((item) {
+            try {
+              return fromJson(item);
+            } catch (e) {
+              print('Error parsing list item: $e');
+              return null;
+            }
+          })
+          .whereType<T>() // Filter out nulls
+          .toList();
+    } catch (e) {
+      print('Error parsing list: $e');
+      return [];
+    }
   }
 
   // toJson method
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'instance_id': instanceId,
-      'folder_id': folderId,
+      'instanceId': instanceId,
+      'folderId': folderId,
       'rating': rating,
       'title': title,
       'year': year,
-      'resource_url': resourceUrl,
+      'resourceUrl': resourceUrl,
       'thumb': thumb,
-      'cover_image': coverImage,
-      'play_duration': playDuration,
-      'play_duration_estimated': playDurationEstimated,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'coverImage': coverImage,
+      'playDuration': playDuration,
+      'playDurationEstimated': playDurationEstimated,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
       'artists': artists.map((a) => a.toJson()).toList(),
       'labels': labels.map((l) => l.toJson()).toList(),
       'formats': formats.map((f) => f.toJson()).toList(),
       'genres': genres.map((g) => g.toJson()).toList(),
       'styles': styles.map((s) => s.toJson()).toList(),
       'notes': notes.map((n) => n.toJson()).toList(),
-      'play_history': playHistory.map((p) => p.toJson()).toList(),
-      'cleaning_history': cleaningHistory.map((c) => c.toJson()).toList(),
+      'playHistory': playHistory.map((p) => p.toJson()).toList(),
+      'cleaningHistory': cleaningHistory.map((c) => c.toJson()).toList(),
       'tracks': tracks.map((t) => t.toJson()).toList(),
     };
   }

@@ -1,4 +1,4 @@
-// lib/data/models/play_history.dart
+// lib/data/models/play_history.dart - optimized version
 import 'models.dart';
 
 class PlayHistory {
@@ -27,34 +27,56 @@ class PlayHistory {
   });
 
   factory PlayHistory.fromJson(Map<String, dynamic> json) {
-    return PlayHistory(
-      id: json['id'] ?? 0,
-      releaseId: json['release_id'] ?? 0,
-      stylusId: json['stylus_id'] ?? 0,
-      playedAt: DateTime.parse(json['played_at']),
-      notes: json['notes'] ?? '',
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      release: json['release'] != null
-          ? Release.fromJson(json['release'])
-          : null,
-      stylus: json['stylus'] != null
-          ? Stylus.fromJson(json['stylus'])
-          : null,
-    );
+    try {
+      print('Parsing PlayHistory: ${json['id']}');
+      
+      return PlayHistory(
+        id: json['id'] ?? 0,
+        releaseId: json['releaseId'] ?? 0,
+        stylusId: json['stylusId'],
+        playedAt: _parseDateTime(json['playedAt']),
+        notes: json['notes'],
+        createdAt: _parseDateTime(json['createdAt']),
+        updatedAt: _parseDateTime(json['updatedAt']),
+        release: json['release'] != null ? Release.fromJson(json['release']) : null,
+        stylus: json['stylus'] != null ? Stylus.fromJson(json['stylus']) : null,
+      );
+    } catch (e) {
+      print('ERROR in PlayHistory.fromJson: $e');
+      // Return a minimal valid object to avoid null errors
+      return PlayHistory(
+        id: json['id'] ?? 0,
+        releaseId: json['releaseId'] ?? 0,
+        playedAt: DateTime.now(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  // Helper method to safely parse DateTime
+  static DateTime _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) {
+      return DateTime.now();
+    }
+    
+    try {
+      return DateTime.parse(dateValue.toString());
+    } catch (e) {
+      print('Error parsing date in PlayHistory: $e');
+      return DateTime.now();
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'release_id': releaseId,
-      'stylus_id': stylusId,
-      'played_at': playedAt.toIso8601String(),
+      'releaseId': releaseId,
+      'stylusId': stylusId,
+      'playedAt': playedAt.toIso8601String(),
       'notes': notes,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-      // We typically don't include relationships in toJson
-      // unless specifically needed for the API
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 }

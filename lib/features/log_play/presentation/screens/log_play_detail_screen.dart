@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../data/models/models.dart';
 import '../../../auth/data/providers/auth_providers.dart';
+import '../../data/providers/log_play_providers.dart';
 
 /// Screen for logging plays and cleanings for a specific record
 class LogPlayDetailScreen extends ConsumerStatefulWidget {
@@ -56,8 +57,10 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
             );
           }
           
-          // Get available styluses
-          final styluses = authData.payload?.styluses ?? [];
+          // Get available active styluses only
+          final styluses = authData.payload?.styluses
+              .where((s) => s.active)
+              .toList() ?? [];
           
           // Set default selected stylus if needed
           if (_selectedStylusId == null && styluses.isNotEmpty) {
@@ -286,7 +289,7 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
             icon: const Icon(Icons.play_arrow),
             label: const Text('Log Play'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: const Color(0xFF3273DC), // Blue color you specified
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
@@ -300,7 +303,7 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
           child: ElevatedButton(
             onPressed: () => _logBoth(context, release),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple,
+              backgroundColor: const Color(0xFF8C6DFF), // Purple color you specified
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
@@ -317,7 +320,7 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
             icon: const Icon(Icons.cleaning_services),
             label: const Text('Log Cleaning'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: const Color(0xFF10B981), // Green color you specified
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
@@ -329,19 +332,34 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
 
   Widget _buildHistorySection(BuildContext context, Release release) {
     // Combine play and cleaning history
-    final allHistory = [
-      ...release.playHistory.map((play) => HistoryItem(
+    final allHistory = <HistoryItem>[];
+    
+    print('Release ID: ${release.id}, Title: ${release.title}');
+    print('Play history length: ${release.playHistory.length}');
+    print('Cleaning history length: ${release.cleaningHistory.length}');
+    
+    // Add all play history items
+    for (final play in release.playHistory) {
+      print('Play: ID=${play.id}, Date=${play.playedAt}, StylesID=${play.stylusId}');
+      allHistory.add(HistoryItem(
         type: 'play',
         date: play.playedAt,
         stylus: play.stylus,
         id: play.id,
-      )),
-      ...release.cleaningHistory.map((cleaning) => HistoryItem(
+        notes: play.notes,
+      ));
+    }
+    
+    // Add all cleaning history items
+    for (final cleaning in release.cleaningHistory) {
+      print('Cleaning: ID=${cleaning.id}, Date=${cleaning.cleanedAt}');
+      allHistory.add(HistoryItem(
         type: 'cleaning',
         date: cleaning.cleanedAt,
         id: cleaning.id,
-      )),
-    ];
+        notes: cleaning.notes,
+      ));
+    }
     
     // Sort by date, most recent first
     allHistory.sort((a, b) => b.date.compareTo(a.date));
@@ -381,13 +399,13 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
       decoration: BoxDecoration(
         border: Border(
           left: BorderSide(
-            color: isPlay ? Colors.blue : Colors.green,
+            color: isPlay ? const Color(0xFF3273DC) : const Color(0xFF10B981),
             width: 4,
           ),
         ),
         color: isPlay
-            ? Colors.blue.withOpacity(0.1)
-            : Colors.green.withOpacity(0.1),
+            ? const Color(0xFF3273DC).withOpacity(0.1)
+            : const Color(0xFF10B981).withOpacity(0.1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -396,7 +414,7 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
             // Icon
             Icon(
               isPlay ? Icons.play_arrow : Icons.cleaning_services,
-              color: isPlay ? Colors.blue : Colors.green,
+              color: isPlay ? const Color(0xFF3273DC) : const Color(0xFF10B981),
             ),
             const SizedBox(width: 12),
             
@@ -413,6 +431,15 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
                   ),
                   if (isPlay && item.stylus != null)
                     Text('Stylus: ${item.stylus?.name}'),
+                  if (item.notes != null && item.notes!.isNotEmpty)
+                    Text(
+                      'Notes: ${item.notes}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                 ],
               ),
             ),
@@ -451,57 +478,114 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
     }
   }
 
-  void _logPlay(BuildContext context, Release release) {
-    // Get the stylus ID as an integer
-    final stylusId = _selectedStylusId != null ? int.parse(_selectedStylusId!) : null;
+  Future<void> _logPlay(BuildContext context, Release release) async {
+    // Show loading indicator
+    setState(() {});
     
-    // This would call the actual log play provider method
-    // For now, we're just showing a success message
-    // In a real implementation, we would call:
-    // ref.read(logPlayNotifierProvider.notifier).logPlay(
-    //   releaseId: release.id,
-    //   stylusId: stylusId,
-    //   playedAt: _selectedDate,
-    //   notes: _notesController.text,
-    // );
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Play logged successfully')),
-    );
+    try {
+      // Get the stylus ID as an integer
+      final stylusId = _selectedStylusId != null ? int.parse(_selectedStylusId!) : null;
+      
+      // Call the actual log play provider method
+      await ref.read(logPlayNotifierProvider.notifier).logPlay(
+        releaseId: release.id,
+        stylusId: stylusId,
+        playedAt: _selectedDate,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
+      );
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Play logged successfully')),
+        );
+        
+        // Clear notes field after successful log
+        _notesController.clear();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to log play: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  void _logCleaning(BuildContext context, Release release) {
-    // This would call the actual log cleaning provider method
-    // For now, we're just showing a success message
-    // In a real implementation, we would call:
-    // ref.read(logPlayNotifierProvider.notifier).logCleaning(
-    //   releaseId: release.id,
-    //   cleanedAt: _selectedDate,
-    //   notes: _notesController.text,
-    // );
+  Future<void> _logCleaning(BuildContext context, Release release) async {
+    // Show loading indicator
+    setState(() {});
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cleaning logged successfully')),
-    );
+    try {
+      // Call the actual log cleaning provider method
+      await ref.read(logPlayNotifierProvider.notifier).logCleaning(
+        releaseId: release.id,
+        cleanedAt: _selectedDate,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
+      );
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cleaning logged successfully')),
+        );
+        
+        // Clear notes field after successful log
+        _notesController.clear();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to log cleaning: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  void _logBoth(BuildContext context, Release release) {
-    // Get the stylus ID as an integer
-    final stylusId = _selectedStylusId != null ? int.parse(_selectedStylusId!) : null;
+  Future<void> _logBoth(BuildContext context, Release release) async {
+    // Show loading indicator
+    setState(() {});
     
-    // This would call the actual log both provider method
-    // For now, we're just showing a success message
-    // In a real implementation, we would call:
-    // ref.read(logPlayNotifierProvider.notifier).logBoth(
-    //   releaseId: release.id,
-    //   stylusId: stylusId,
-    //   dateTime: _selectedDate,
-    //   notes: _notesController.text,
-    // );
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Play and cleaning logged successfully')),
-    );
+    try {
+      // Get the stylus ID as an integer
+      final stylusId = _selectedStylusId != null ? int.parse(_selectedStylusId!) : null;
+      
+      // Call both log play and log cleaning in sequence
+      await ref.read(logPlayNotifierProvider.notifier).logPlay(
+        releaseId: release.id,
+        stylusId: stylusId,
+        playedAt: _selectedDate,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
+      );
+      
+      await ref.read(logPlayNotifierProvider.notifier).logCleaning(
+        releaseId: release.id,
+        cleanedAt: _selectedDate,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
+      );
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Play and cleaning logged successfully')),
+        );
+        
+        // Clear notes field after successful log
+        _notesController.clear();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to log play and cleaning: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showHistoryOptions(BuildContext context, HistoryItem item) {
@@ -567,12 +651,13 @@ class HistoryItem {
   final DateTime date;
   final Stylus? stylus;
   final int id;
+  final String? notes;
 
   HistoryItem({
     required this.type,
     required this.date,
     this.stylus,
     required this.id,
+    this.notes,
   });
 }
-
