@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/widgets/widgets.dart';
-import '../../../../core/theme/theme.dart';
+// import '../../../../core/widgets/widgets.dart';
+// import '../../../../core/theme/theme.dart';
 import '../../../collection/data/providers/collection_providers.dart';
 
 /// Home screen for the Kleio app.

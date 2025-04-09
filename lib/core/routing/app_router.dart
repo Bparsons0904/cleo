@@ -7,11 +7,11 @@ import '../../features/auth/data/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/auth_screen.dart';
 import '../../features/collection/presentation/screens/collection_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/play_history/presentation/screens/log_play_screen.dart';
 import '../../features/play_history/presentation/screens/play_history_screen.dart';
 import '../../features/record_detail/presentation/screens/record_detail_screen.dart';
 import '../../features/stylus/presentation/screens/stylus_screen.dart';
 import '../../features/analytics/presentation/screens/analytics_screen.dart';
+import '../../features/log_play/presentation/screens/log_play_screen.dart';
 import '../../main.dart';
 import '../widgets/app_scaffold.dart';
 

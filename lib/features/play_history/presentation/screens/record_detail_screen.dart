@@ -26,12 +26,9 @@ final releaseByIdProvider = Provider.family<Release?, int>((ref, releaseId) {
   return null;
 });
 
-/// Screen that displays record details
 class RecordDetailScreen extends ConsumerWidget {
-  /// The ID of the release to display
   final int releaseId;
 
-  /// Constructor
   const RecordDetailScreen({
     super.key,
     required this.releaseId,
@@ -43,8 +40,8 @@ class RecordDetailScreen extends ConsumerWidget {
     final authState = ref.watch(authStateNotifierProvider);
     
     return Scaffold(
-      appBar: const CleoAppBar(
-        title: 'Record Details',
+      appBar: CleoAppBar(
+        title: release?.title ?? 'Record Details',
       ),
       body: authState.when(
         data: (_) {
@@ -60,9 +57,6 @@ class RecordDetailScreen extends ConsumerWidget {
           child: Text('Error loading record: $error'),
         ),
       ),
-      bottomNavigationBar: release != null
-          ? _buildBottomActions(context, ref)
-          : null,
     );
   }
 
@@ -76,6 +70,7 @@ class RecordDetailScreen extends ConsumerWidget {
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
+      // bottomNavigationBar: _buildBottomActions(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -107,6 +102,7 @@ class RecordDetailScreen extends ConsumerWidget {
                       ),
               ),
               const SizedBox(width: 16),
+              
               // Basic info
               Expanded(
                 child: Column(
@@ -317,49 +313,211 @@ class RecordDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBottomActions(BuildContext context, WidgetRef ref) {
+  Widget _buildBottomActions(BuildContext context) {
     return BottomAppBar(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           IconButton(
-            onPressed: () {
-              // Show log play dialog
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Coming soon: Log Play'),
-                ),
-              );
-            },
+            onPressed: () => _logPlay(context),
             icon: const Icon(Icons.play_arrow),
             tooltip: 'Log Play',
           ),
           IconButton(
-            onPressed: () {
-              // Show clean record dialog
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Coming soon: Log Cleaning'),
-                ),
-              );
-            },
+            onPressed: () => _logCleaning(context),
             icon: const Icon(Icons.cleaning_services),
             tooltip: 'Log Cleaning',
           ),
           IconButton(
-            onPressed: () {
-              // Show edit notes dialog
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Coming soon: Add Note'),
-                ),
-              );
-            },
+            onPressed: () => _addNote(context),
             icon: const Icon(Icons.note_add),
             tooltip: 'Add Note',
           ),
         ],
       ),
+    );
+  }
+
+  void _logPlay(BuildContext context) {
+    // Show dialog for logging play
+    showDialog(
+      context: context,
+      builder: (context) => _buildLogPlayDialog(context),
+    );
+  }
+
+  void _logCleaning(BuildContext context) {
+    // Show dialog for logging cleaning
+    showDialog(
+      context: context,
+      builder: (context) => _buildLogCleaningDialog(context),
+    );
+  }
+
+  void _addNote(BuildContext context) {
+    // Show dialog for adding note
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Note'),
+        content: const TextField(
+          decoration: InputDecoration(
+            hintText: 'Enter your note here...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Handle adding note
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogPlayDialog(BuildContext context) {
+    final now = DateTime.now();
+    
+    return AlertDialog(
+      title: const Text('Log Play'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Date picker
+          const Text('Date'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(DateFormat('MM/dd/yyyy').format(now)),
+                const Icon(Icons.calendar_today),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Stylus selector
+          const Text('Stylus Used'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('MP-110 (Primary)'),
+                Icon(Icons.arrow_drop_down),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Notes field
+          const Text('Notes'),
+          const SizedBox(height: 8),
+          const TextField(
+            decoration: InputDecoration(
+              hintText: 'Enter any notes about this play...',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            // Handle logging play
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Play logged successfully')),
+            );
+          },
+          child: const Text('Log Play'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLogCleaningDialog(BuildContext context) {
+    final now = DateTime.now();
+    
+    return AlertDialog(
+      title: const Text('Log Cleaning'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Date picker
+          const Text('Date'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(DateFormat('MM/dd/yyyy').format(now)),
+                const Icon(Icons.calendar_today),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Notes field
+          const Text('Notes'),
+          const SizedBox(height: 8),
+          const TextField(
+            decoration: InputDecoration(
+              hintText: 'Enter any notes about this cleaning...',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            // Handle logging cleaning
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Cleaning logged successfully')),
+            );
+          },
+          child: const Text('Log Cleaning'),
+        ),
+      ],
     );
   }
 }
