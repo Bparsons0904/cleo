@@ -629,10 +629,12 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Actually delete the item
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Record deleted')),
-              );
+              // Call the appropriate delete method based on item type
+              if (item.type == 'play') {
+                _deletePlay(context, item.id);
+              } else {
+                _deleteCleaning(context, item.id);
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
@@ -643,7 +645,50 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
       ),
     );
   }
+
+  // Method to delete a play record
+  Future<void> _deletePlay(BuildContext context, int playId) async {
+    try {
+      await ref.read(logPlayNotifierProvider.notifier).deletePlay(playId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Play record deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete play record: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Method to delete a cleaning record
+  Future<void> _deleteCleaning(BuildContext context, int cleaningId) async {
+    try {
+      await ref.read(logPlayNotifierProvider.notifier).deleteCleaning(cleaningId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cleaning record deleted successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete cleaning record: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
+
 
 /// Helper class to combine play and cleaning history items
 class HistoryItem {

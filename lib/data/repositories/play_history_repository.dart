@@ -65,6 +65,7 @@ class PlayHistoryRepository {
     }
   }
 
+
   Exception _handleError(DioException e) {
     if (e.response?.statusCode == 401) {
       return Exception('Authentication required. Please log in again.');
@@ -74,4 +75,35 @@ class PlayHistoryRepository {
       return Exception('An error occurred: ${e.message}');
     }
   }
+
+  Future<bool> updatePlay({
+    required int playId,
+    required DateTime playedAt,
+    int? stylusId,
+    String? notes,
+  }) async {
+    try {
+      debugPrint('PlayHistoryRepository.updatePlay - START');
+      final requestData = {
+        'playedAt': playedAt.toUtc().toIso8601String(),
+        'stylusId': stylusId,
+        'notes': notes,
+      };
+      
+      await _apiClient.put('/plays/$playId', data: requestData);
+      return true;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<bool> deletePlay(int playId) async {
+    try {
+      debugPrint('PlayHistoryRepository.deletePlay - START');
+      await _apiClient.delete('/plays/$playId');
+      return true;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }  
 }

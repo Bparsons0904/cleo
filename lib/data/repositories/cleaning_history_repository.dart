@@ -51,6 +51,7 @@ class CleaningHistoryRepository {
     }
   }
 
+
   Exception _handleError(DioException e) {
     if (e.response?.statusCode == 401) {
       return Exception('Authentication required. Please log in again.');
@@ -60,4 +61,34 @@ class CleaningHistoryRepository {
       return Exception('An error occurred: ${e.message}');
     }
   }
+
+  Future<bool> updateCleaning({
+    required int cleaningId,
+    required DateTime cleanedAt,
+    String? notes,
+  }) async {
+    try {
+      debugPrint('CleaningHistoryRepository.updateCleaning - START');
+      final requestData = {
+        'cleanedAt': cleanedAt.toUtc().toIso8601String(),
+        'notes': notes,
+      };
+      
+      await _apiClient.put('/cleanings/$cleaningId', data: requestData);
+      return true;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<bool> deleteCleaning(int cleaningId) async {
+    try {
+      debugPrint('CleaningHistoryRepository.deleteCleaning - START');
+      await _apiClient.delete('/cleanings/$cleaningId');
+      return true;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 }
+

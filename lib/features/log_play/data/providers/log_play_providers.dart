@@ -167,4 +167,115 @@ class LogPlayNotifier extends _$LogPlayNotifier {
       // Don't throw, just log the error
     }
   }
+
+  Future<void> updatePlay({
+    required int playId,
+    required DateTime playedAt,
+    int? stylusId,
+    String? notes,
+  }) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      debugPrint('UpdatePlay - playId: $playId, playedAt: $playedAt, stylusId: $stylusId, notes: $notes');
+      
+      final playHistoryRepo = ref.read(playHistoryRepositoryProvider);
+      await playHistoryRepo.updatePlay(
+        playId: playId,
+        playedAt: playedAt,
+        stylusId: stylusId,
+        notes: notes,
+      );
+      
+      debugPrint('UpdatePlay - Play updated successfully');
+      
+      await _quietRefresh();
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      debugPrint('UpdatePlay - Error: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Updates a cleaning record
+  Future<void> updateCleaning({
+    required int cleaningId,
+    required DateTime cleanedAt,
+    String? notes,
+  }) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      debugPrint('UpdateCleaning - cleaningId: $cleaningId, cleanedAt: $cleanedAt, notes: $notes');
+      
+      final cleaningRepo = ref.read(cleaningHistoryRepositoryProvider);
+      await cleaningRepo.updateCleaning(
+        cleaningId: cleaningId,
+        cleanedAt: cleanedAt,
+        notes: notes,
+      );
+      
+      debugPrint('UpdateCleaning - Cleaning updated successfully');
+      
+      await _quietRefresh();
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      debugPrint('UpdateCleaning - Error: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Deletes a play record
+  Future<void> deletePlay(int playId) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      debugPrint('DeletePlay - playId: $playId');
+      
+      final playHistoryRepo = ref.read(playHistoryRepositoryProvider);
+      await playHistoryRepo.deletePlay(playId);
+      
+      debugPrint('DeletePlay - Play deleted successfully');
+      
+      await _quietRefresh();
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      debugPrint('DeletePlay - Error: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Deletes a cleaning record
+  Future<void> deleteCleaning(int cleaningId) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      debugPrint('DeleteCleaning - cleaningId: $cleaningId');
+      
+      final cleaningRepo = ref.read(cleaningHistoryRepositoryProvider);
+      await cleaningRepo.deleteCleaning(cleaningId);
+      
+      debugPrint('DeleteCleaning - Cleaning deleted successfully');
+      
+      await _quietRefresh();
+      
+      state = const AsyncValue.data(null);
+    } catch (error, stackTrace) {
+      debugPrint('DeleteCleaning - Error: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
+  }
+
 }
+
