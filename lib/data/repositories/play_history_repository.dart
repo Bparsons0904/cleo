@@ -18,7 +18,7 @@ class PlayHistoryRepository {
       final response = await _apiClient.post('/plays', data: {
         'releaseId': releaseId,
         'stylusId': stylusId,
-        'playedAt': playedAt.toIso8601String(),
+        'playedAt': playedAt.toUtc().toIso8601String(),
         'notes': notes,
       });
       

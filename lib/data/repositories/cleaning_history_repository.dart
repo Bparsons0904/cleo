@@ -16,7 +16,7 @@ class CleaningHistoryRepository {
     try {
       final response = await _apiClient.post('/cleanings', data: {
         'releaseId': releaseId,
-        'cleanedAt': cleanedAt.toIso8601String(),
+        'cleanedAt': cleanedAt.toUtc().toIso8601String(),
         'notes': notes,
       });
       

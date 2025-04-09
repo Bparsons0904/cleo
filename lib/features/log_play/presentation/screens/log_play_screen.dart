@@ -7,6 +7,7 @@ import '../../../../core/widgets/widgets.dart';
 import '../../../../data/models/models.dart';
 import '../../../auth/data/providers/auth_providers.dart';
 import '../../data/providers/log_play_filter_provider.dart';
+import '../../data/providers/log_play_providers.dart';
 import '../widgets/log_play_search_bar.dart';
 import '../widgets/log_play_sort_dropdown.dart';
 import 'log_play_detail_screen.dart';
@@ -99,14 +100,14 @@ class LogPlayScreen extends ConsumerWidget {
   }
 }
 
-// Move this to a separate StatelessWidget so it has its own BuildContext
-class ReleaseGridItem extends StatelessWidget {
+
+class ReleaseGridItem extends ConsumerWidget {
   final Release release;
   
   const ReleaseGridItem({super.key, required this.release});
   
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Get artist name
     final artistName = release.artists.isNotEmpty && release.artists.first.artist != null
         ? release.artists.first.artist!.name
@@ -114,6 +115,10 @@ class ReleaseGridItem extends StatelessWidget {
     
     // Get release year if available
     final releaseYear = release.year?.toString() ?? '';
+    
+    // Watch log play state to handle loading
+    final logPlayState = ref.watch(logPlayNotifierProvider);
+    final isLoading = logPlayState is AsyncLoading;
     
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -124,14 +129,27 @@ class ReleaseGridItem extends StatelessWidget {
           children: [
             // Album cover
             Expanded(
-              child: release.thumb.isNotEmpty
-                  ? Image.network(
-                      release.thumb,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, _) => _buildPlaceholderImage(),
-                    )
-                  : _buildPlaceholderImage(),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  release.thumb.isNotEmpty
+                      ? Image.network(
+                          release.thumb,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder: (context, error, _) => _buildPlaceholderImage(),
+                        )
+                      : _buildPlaceholderImage(),
+                  // Show loading indicator if an action is in progress
+                  if (isLoading)
+                    Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                ],
+              ),
             ),
             
             // Title and artist
@@ -175,15 +193,17 @@ class ReleaseGridItem extends StatelessWidget {
                 children: [
                   _buildActionButton(
                     context: context,
-                    onPressed: () => _navigateToDetailScreen(context, release),
-                    color: Colors.green.shade200,
+                    onPressed: () => _handleQuickPlay(context, ref),
+                    color: Colors.blue.shade200,
                     icon: Icons.play_arrow,
+                    tooltip: 'Quick Play',
                   ),
                   _buildActionButton(
                     context: context,
-                    onPressed: () => _navigateToDetailScreen(context, release),
-                    color: Colors.blue.shade200,
+                    onPressed: () => _handleQuickCleaning(context, ref),
+                    color: Colors.green.shade200,
                     icon: Icons.cleaning_services,
+                    tooltip: 'Quick Clean',
                   ),
                 ],
               ),
@@ -208,25 +228,66 @@ class ReleaseGridItem extends StatelessWidget {
     required VoidCallback onPressed,
     required Color color,
     required IconData icon,
+    required String tooltip,
   }) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 20),
         ),
-        child: Icon(icon, size: 20),
       ),
     );
   }
   
   void _navigateToDetailScreen(BuildContext context, Release release) {
-    // Navigate to the detail screen using GoRouter
-    // We're using context.push instead of context.go to maintain navigation history
-    // This way, users can go back to the log play screen after viewing details
     context.push('/log-play-detail/${release.id}');
+  }
+  
+  void _handleQuickPlay(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(logPlayNotifierProvider.notifier).quickLogPlay(release.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logged play for "${release.title}"')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to log play: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _handleQuickCleaning(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(logPlayNotifierProvider.notifier).quickLogCleaning(release.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logged cleaning for "${release.title}"')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to log cleaning: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

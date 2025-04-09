@@ -26,11 +26,11 @@ class _AppScaffoldState extends State<AppScaffold> {
     
     if (location.startsWith(AppRoutes.home)) {
       return 0;
-    } else if (location.startsWith(AppRoutes.collection)) {
-      return 1;
-    } else if (location.startsWith(AppRoutes.playHistory)) {
-      return 2;
     } else if (location.startsWith(AppRoutes.logPlay)) {
+      return 1;
+    } else if (location.startsWith(AppRoutes.collection)) {
+      return 2;
+    } else if (location.startsWith(AppRoutes.playHistory)) {
       return 3;
     }
     
