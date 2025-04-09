@@ -9,6 +9,7 @@ import '../../../auth/data/providers/auth_providers.dart';
 import '../../data/providers/log_play_filter_provider.dart';
 import '../widgets/log_play_search_bar.dart';
 import '../widgets/log_play_sort_dropdown.dart';
+import 'log_play_detail_screen.dart';
 
 class LogPlayScreen extends ConsumerWidget {
   const LogPlayScreen({super.key});
@@ -117,7 +118,7 @@ class ReleaseGridItem extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showRecordActions(context, release),
+        onTap: () => _navigateToDetailScreen(context, release),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -174,13 +175,13 @@ class ReleaseGridItem extends StatelessWidget {
                 children: [
                   _buildActionButton(
                     context: context,
-                    onPressed: () => _logPlay(context, release),
+                    onPressed: () => _navigateToDetailScreen(context, release),
                     color: Colors.green.shade200,
                     icon: Icons.play_arrow,
                   ),
                   _buildActionButton(
                     context: context,
-                    onPressed: () => _logCleaning(context, release),
+                    onPressed: () => _navigateToDetailScreen(context, release),
                     color: Colors.blue.shade200,
                     icon: Icons.cleaning_services,
                   ),
@@ -222,366 +223,10 @@ class ReleaseGridItem extends StatelessWidget {
     );
   }
   
-  void _showRecordActions(BuildContext context, Release release) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => _buildRecordActionsSheet(context, release),
-    );
-  }
-  
-  Widget _buildRecordActionsSheet(BuildContext context, Release release) {
-    // Get artist name
-    final artistName = release.artists.isNotEmpty && release.artists.first.artist != null
-        ? release.artists.first.artist!.name
-        : 'Unknown Artist';
-        
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Header with album info
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              // Album art
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: release.thumb.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Image.network(
-                          release.thumb,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, _) => const Center(
-                            child: Icon(Icons.album, size: 30, color: Colors.grey),
-                          ),
-                        ),
-                      )
-                    : const Center(
-                        child: Icon(Icons.album, size: 30, color: Colors.grey),
-                      ),
-              ),
-              const SizedBox(width: 16),
-              // Album info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      release.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      artistName,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (release.year != null)
-                      Text(
-                        '${release.year}',
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        const Divider(),
-        
-        // Actions
-        ListTile(
-          leading: const Icon(Icons.play_arrow, color: Colors.green),
-          title: const Text('Log Play'),
-          onTap: () {
-            Navigator.pop(context);
-            _logPlay(context, release);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.cleaning_services, color: Colors.blue),
-          title: const Text('Log Cleaning'),
-          onTap: () {
-            Navigator.pop(context);
-            _logCleaning(context, release);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.all_inclusive),
-          title: const Text('Log Play & Cleaning'),
-          onTap: () {
-            Navigator.pop(context);
-            _logBoth(context, release);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.info_outline),
-          title: const Text('View Record Details'),
-          onTap: () {
-            Navigator.pop(context);
-            _viewRecordDetails(context, release);
-          },
-        ),
-      ],
-    );
-  }
-  
-  void _logPlay(BuildContext context, Release release) {
-    // Show a dialog with date and stylus selection
-    showDialog(
-      context: context,
-      builder: (context) => _buildLogDialog(context, release, isPlay: true),
-    );
-  }
-  
-  void _logCleaning(BuildContext context, Release release) {
-    // Show a dialog with date selection
-    showDialog(
-      context: context,
-      builder: (context) => _buildLogDialog(context, release, isPlay: false),
-    );
-  }
-  
-  void _logBoth(BuildContext context, Release release) {
-    // Show a dialog with options for both play and cleaning
-    showDialog(
-      context: context,
-      builder: (context) => _buildLogBothDialog(context, release),
-    );
-  }
-  
-  void _viewRecordDetails(BuildContext context, Release release) {
-    // Navigate to record detail screen
-    context.push('/record/${release.id}');
-  }
-  
-  Widget _buildLogDialog(BuildContext context, Release release, {required bool isPlay}) {
-    final title = isPlay ? 'Log Play' : 'Log Cleaning';
-    final actionText = isPlay ? 'Play' : 'Cleaning';
-    
-    return AlertDialog(
-      title: Text(title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Album info
-          Text(release.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          if (release.artists.isNotEmpty && release.artists.first.artist != null)
-            Text(release.artists.first.artist!.name),
-          const SizedBox(height: 16),
-          
-          // Date picker field
-          const Text('Date'),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () async {
-              // Show date picker
-              final DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime.now(),
-              );
-              
-              if (picked != null) {
-                // Handle date selection
-                print('Selected date: $picked');
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(DateTime.now().toString().split(' ')[0]),
-                  const Icon(Icons.calendar_today),
-                ],
-              ),
-            ),
-          ),
-          
-          // Stylus selector (only for plays)
-          if (isPlay) ...[
-            const SizedBox(height: 16),
-            const Text('Stylus Used'),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('MP-110 (Primary)'),
-                  Icon(Icons.arrow_drop_down),
-                ],
-              ),
-            ),
-          ],
-          
-          // Notes field
-          const SizedBox(height: 16),
-          const Text('Notes'),
-          const SizedBox(height: 8),
-          const SizedBox(
-            height: 100,
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Enter any notes...',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            // Log the play or cleaning
-            print('Logged $actionText for ${release.title}');
-            Navigator.pop(context);
-            
-            // Show confirmation
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$actionText logged successfully')),
-            );
-          },
-          child: Text('Log $actionText'),
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildLogBothDialog(BuildContext context, Release release) {
-    return AlertDialog(
-      title: const Text('Log Play & Cleaning'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Album info
-          Text(release.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          if (release.artists.isNotEmpty && release.artists.first.artist != null)
-            Text(release.artists.first.artist!.name),
-          const SizedBox(height: 16),
-          
-          // Date picker field
-          const Text('Date'),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () async {
-              // Show date picker
-              final DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime.now(),
-              );
-              
-              if (picked != null) {
-                // Handle date selection
-                print('Selected date: $picked');
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(DateTime.now().toString().split(' ')[0]),
-                  const Icon(Icons.calendar_today),
-                ],
-              ),
-            ),
-          ),
-          
-          // Stylus selector
-          const SizedBox(height: 16),
-          const Text('Stylus Used'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('MP-110 (Primary)'),
-                Icon(Icons.arrow_drop_down),
-              ],
-            ),
-          ),
-          
-          // Notes field
-          const SizedBox(height: 16),
-          const Text('Notes'),
-          const SizedBox(height: 8),
-          const SizedBox(
-            height: 100,
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Enter any notes...',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            // Log both play and cleaning
-            print('Logged play and cleaning for ${release.title}');
-            Navigator.pop(context);
-            
-            // Show confirmation
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Play and cleaning logged successfully')),
-            );
-          },
-          child: const Text('Log Both'),
-        ),
-      ],
-    );
+  void _navigateToDetailScreen(BuildContext context, Release release) {
+    // Navigate to the detail screen using GoRouter
+    // We're using context.push instead of context.go to maintain navigation history
+    // This way, users can go back to the log play screen after viewing details
+    context.push('/log-play-detail/${release.id}');
   }
 }

@@ -1,4 +1,4 @@
-// lib/core/routing/app_router.dart
+// lib/core/routing/app_router.dart - Updated with new route
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -12,6 +12,7 @@ import '../../features/record_detail/presentation/screens/record_detail_screen.d
 import '../../features/stylus/presentation/screens/stylus_screen.dart';
 import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/log_play/presentation/screens/log_play_screen.dart';
+import '../../features/log_play/presentation/screens/log_play_detail_screen.dart';
 import '../../main.dart';
 import '../widgets/app_scaffold.dart';
 
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String collection = '/collection';
   static const String playHistory = '/play-history';
   static const String logPlay = '/log-play';
+  static const String logPlayDetail = '/log-play-detail/:id';
   static const String stylus = '/stylus';
   static const String analytics = '/analytics';
   static const String settings = '/settings';
@@ -113,26 +115,14 @@ GoRouter appRouter(Ref ref) {
           return RecordDetailScreen(releaseId: id);
         },
       ),
+      // Add the new route for Log Play Detail screen
+      GoRoute(
+        path: AppRoutes.logPlayDetail,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return LogPlayDetailScreen(releaseId: id);
+        },
+      ),
     ],
   );
-}
-
-/// Authentication state provider
-@riverpod
-class AuthState extends _$AuthState {
-  @override
-  bool build() {
-    // Initial state - not authenticated
-    return false;
-  }
-  
-  // Login method
-  void login() {
-    state = true;
-  }
-  
-  // Logout method
-  void logout() {
-    state = false;
-  }
 }
