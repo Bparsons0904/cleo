@@ -1,6 +1,6 @@
 // lib/data/repositories/stylus_repository.dart
 import 'package:dio/dio.dart';
-import '../models/stylus.dart';
+import '../models/models.dart';
 import '../services/api_client.dart';
 
 class StylusRepository {
@@ -8,39 +8,37 @@ class StylusRepository {
 
   StylusRepository({required ApiClient apiClient}) : _apiClient = apiClient;
 
-  Future<List<Stylus>> getStyluses() async {
+  /// Creates a new stylus
+  Future<void> createStylus(Map<String, dynamic> stylusData) async {
     try {
-      final response = await _apiClient.get('/styluses');
-      
-      final List<dynamic> results = response.data;
-      return results.map((json) => Stylus.fromJson(json)).toList();
+      // Make API call to create stylus
+      await _apiClient.post('/styluses', data: stylusData);
+
+      // No need to return anything - the auth payload will be updated by the API
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Stylus> createStylus(Map<String, dynamic> stylusData) async {
+  /// Updates an existing stylus
+  Future<void> updateStylus(int id, Map<String, dynamic> stylusData) async {
     try {
-      final response = await _apiClient.post('/styluses', data: stylusData);
-      return Stylus.fromJson(response.data);
+      // Make API call to update stylus
+      await _apiClient.put('/styluses/$id', data: stylusData);
+
+      // No need to return anything - the auth payload will be updated by the API
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Stylus> updateStylus(int id, Map<String, dynamic> stylusData) async {
+  /// Deletes a stylus
+  Future<void> deleteStylus(int id) async {
     try {
-      final response = await _apiClient.put('/styluses/$id', data: stylusData);
-      return Stylus.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Future<bool> deleteStylus(int id) async {
-    try {
+      // Make API call to delete stylus
       await _apiClient.delete('/styluses/$id');
-      return true;
+
+      // No need to return anything - the auth payload will be updated by the API
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -51,6 +49,10 @@ class StylusRepository {
       return Exception('Authentication required. Please log in again.');
     } else if (e.response?.statusCode == 404) {
       return Exception('Stylus not found.');
+    } else if (e.response?.statusCode == 405) {
+      return Exception(
+        'Method not allowed. Check the API endpoint: ${e.requestOptions.path}',
+      );
     } else {
       return Exception('An error occurred: ${e.message}');
     }

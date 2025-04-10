@@ -21,7 +21,6 @@ Future<SharedPreferences> sharedPreferences(SharedPreferencesRef ref) {
 /// Provider for the API client
 @riverpod
 ApiClient apiClient(ApiClientRef ref) {
-  // Use the no-args constructor since it uses AppConfig internally
   return ApiClient();
 }
 
@@ -55,7 +54,9 @@ PlayHistoryRepository playHistoryRepository(PlayHistoryRepositoryRef ref) {
 
 /// Provider for CleaningHistoryRepository
 @riverpod
-CleaningHistoryRepository cleaningHistoryRepository(CleaningHistoryRepositoryRef ref) {
+CleaningHistoryRepository cleaningHistoryRepository(
+  CleaningHistoryRepositoryRef ref,
+) {
   final apiClient = ref.watch(apiClientProvider);
   return CleaningHistoryRepository(apiClient: apiClient);
 }
