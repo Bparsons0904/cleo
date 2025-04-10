@@ -64,12 +64,14 @@ class CleaningHistoryRepository {
 
   Future<bool> updateCleaning({
     required int cleaningId,
+    required int releaseId, // Add this parameter
     required DateTime cleanedAt,
     String? notes,
   }) async {
     try {
       debugPrint('CleaningHistoryRepository.updateCleaning - START');
       final requestData = {
+        'releaseId': releaseId, // Include this in request data
         'cleanedAt': cleanedAt.toUtc().toIso8601String(),
         'notes': notes,
       };

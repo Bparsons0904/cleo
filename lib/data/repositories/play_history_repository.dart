@@ -78,6 +78,7 @@ class PlayHistoryRepository {
 
   Future<bool> updatePlay({
     required int playId,
+    required int releaseId, // Add this parameter
     required DateTime playedAt,
     int? stylusId,
     String? notes,
@@ -85,6 +86,7 @@ class PlayHistoryRepository {
     try {
       debugPrint('PlayHistoryRepository.updatePlay - START');
       final requestData = {
+        'releaseId': releaseId, // Include this in request data
         'playedAt': playedAt.toUtc().toIso8601String(),
         'stylusId': stylusId,
         'notes': notes,

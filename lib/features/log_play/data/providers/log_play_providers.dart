@@ -170,6 +170,7 @@ class LogPlayNotifier extends _$LogPlayNotifier {
 
   Future<void> updatePlay({
     required int playId,
+    required int releaseId, // Add this parameter
     required DateTime playedAt,
     int? stylusId,
     String? notes,
@@ -177,11 +178,12 @@ class LogPlayNotifier extends _$LogPlayNotifier {
     state = const AsyncValue.loading();
     
     try {
-      debugPrint('UpdatePlay - playId: $playId, playedAt: $playedAt, stylusId: $stylusId, notes: $notes');
+      debugPrint('UpdatePlay - playId: $playId, releaseId: $releaseId, playedAt: $playedAt, stylusId: $stylusId, notes: $notes');
       
       final playHistoryRepo = ref.read(playHistoryRepositoryProvider);
       await playHistoryRepo.updatePlay(
         playId: playId,
+        releaseId: releaseId, // Pass this parameter
         playedAt: playedAt,
         stylusId: stylusId,
         notes: notes,
@@ -200,20 +202,21 @@ class LogPlayNotifier extends _$LogPlayNotifier {
     }
   }
 
-  /// Updates a cleaning record
   Future<void> updateCleaning({
     required int cleaningId,
+    required int releaseId, // Add this parameter
     required DateTime cleanedAt,
     String? notes,
   }) async {
     state = const AsyncValue.loading();
     
     try {
-      debugPrint('UpdateCleaning - cleaningId: $cleaningId, cleanedAt: $cleanedAt, notes: $notes');
+      debugPrint('UpdateCleaning - cleaningId: $cleaningId, releaseId: $releaseId, cleanedAt: $cleanedAt, notes: $notes');
       
       final cleaningRepo = ref.read(cleaningHistoryRepositoryProvider);
       await cleaningRepo.updateCleaning(
         cleaningId: cleaningId,
+        releaseId: releaseId, // Pass this parameter
         cleanedAt: cleanedAt,
         notes: notes,
       );

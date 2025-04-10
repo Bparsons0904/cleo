@@ -588,31 +588,262 @@ class _LogPlayDetailScreenState extends ConsumerState<LogPlayDetailScreen> {
     }
   }
 
-  void _showHistoryOptions(BuildContext context, HistoryItem item) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Edit'),
-            onTap: () {
-              Navigator.pop(context);
-              // Show edit dialog
-            },
+// Update the existing _showHistoryOptions method
+void _showHistoryOptions(BuildContext context, HistoryItem item) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.edit),
+          title: const Text('Edit'),
+          onTap: () {
+            Navigator.pop(context);
+            // Call the new edit dialog method
+            _showEditDialog(context, item);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.delete, color: Colors.red),
+          title: const Text('Delete', style: TextStyle(color: Colors.red)),
+          onTap: () {
+            Navigator.pop(context);
+            _confirmDelete(context, item);
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+// Add this new method to show and handle the edit dialog
+void _showEditDialog(BuildContext context, HistoryItem item) {
+  // Create local state variables that will be updated in the dialog
+  DateTime editDate = item.date;
+  String? editNotes = item.notes;
+  String? editStylusId = item.stylus?.id.toString();
+  
+  // Get the available styluses from the auth state
+  final authState = ref.read(authStateNotifierProvider);
+  final styluses = authState.value?.payload?.styluses
+      .where((s) => s.active)
+      .toList() ?? [];
+  
+  showDialog(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder( // Use StatefulBuilder to handle state changes within the dialog
+      builder: (context, setState) {
+        return AlertDialog(
+          title: Text('Edit ${item.type == 'play' ? 'Play' : 'Cleaning'} Record'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Date Picker
+                const Text(
+                  'Date',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: editDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null && picked != editDate) {
+                      setState(() {
+                        editDate = picked;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          DateFormat('MM/dd/yyyy').format(editDate),
+                        ),
+                        const Icon(Icons.calendar_today),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Stylus Dropdown (only for play records)
+                if (item.type == 'play') ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Stylus Used',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: editStylusId,
+                        items: styluses.map((stylus) {
+                          return DropdownMenuItem<String>(
+                            value: stylus.id.toString(),
+                            child: Text(
+                              stylus.primary
+                                  ? '${stylus.name} (Primary)'
+                                  : stylus.name,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            editStylusId = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+                
+                // Notes Field
+                const SizedBox(height: 16),
+                const Text(
+                  'Notes',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: TextEditingController(text: editNotes),
+                  onChanged: (value) {
+                    editNotes = value;
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Enter any notes...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                  maxLines: 4,
+                ),
+              ],
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Delete', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _confirmDelete(context, item);
-            },
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Call the appropriate update method based on the item type
+                if (item.type == 'play') {
+                  _updatePlay(
+                    context,
+                    item.id,
+                    editDate,
+                    editStylusId != null ? int.parse(editStylusId!) : null,
+                    editNotes,
+                  );
+                } else {
+                  _updateCleaning(
+                    context,
+                    item.id,
+                    editDate,
+                    editNotes,
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+
+  // Method to update a play record
+  Future<void> _updatePlay(
+    BuildContext context,
+    int playId,
+    DateTime playedAt,
+    int? stylusId,
+    String? notes,
+  ) async {
+    try {
+      await ref.read(logPlayNotifierProvider.notifier).updatePlay(
+        playId: playId,
+        releaseId: widget.releaseId, // Include the release ID from the widget
+        playedAt: playedAt,
+        stylusId: stylusId,
+        notes: notes,
+      );
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Play record updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update play record: $e'),
+            backgroundColor: Colors.red,
           ),
-        ],
-      ),
-    );
+        );
+      }
+    }
+  }
+
+  // Method to update a cleaning record
+  Future<void> _updateCleaning(
+    BuildContext context,
+    int cleaningId,
+    DateTime cleanedAt,
+    String? notes,
+  ) async {
+    try {
+      await ref.read(logPlayNotifierProvider.notifier).updateCleaning(
+        cleaningId: cleaningId,
+        releaseId: widget.releaseId, // Include the release ID from the widget
+        cleanedAt: cleanedAt,
+        notes: notes,
+      );
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cleaning record updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update cleaning record: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _confirmDelete(BuildContext context, HistoryItem item) {
