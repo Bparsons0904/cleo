@@ -67,6 +67,10 @@ class _AddStylusFormState extends State<AddStylusForm> {
 
     // Initialize form with existing stylus data if editing
     if (widget.initialStylus != null) {
+      print("Initializing form with stylus: ${widget.initialStylus!.name}");
+      print("Expected lifespan: ${widget.initialStylus!.expectedLifespan}");
+      print("Purchase date: ${widget.initialStylus!.purchaseDate}");
+
       _nameController.text = widget.initialStylus!.name;
       _manufacturerController.text = widget.initialStylus!.manufacturer ?? '';
       _lifespanController.text =
@@ -74,6 +78,10 @@ class _AddStylusFormState extends State<AddStylusForm> {
       _purchaseDate = widget.initialStylus!.purchaseDate;
       _isActive = widget.initialStylus!.active;
       _isPrimary = widget.initialStylus!.primary;
+    } else {
+      // Default purchase date to today for new stylus
+      _purchaseDate = DateTime.now();
+      print("Setting default purchase date for new stylus: $_purchaseDate");
     }
   }
 

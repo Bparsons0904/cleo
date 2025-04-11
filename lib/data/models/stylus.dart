@@ -29,21 +29,24 @@ class Stylus {
   factory Stylus.fromJson(Map<String, dynamic> json) {
     // Add debug printing
     print("Parsing Stylus: ${json['name']}");
-    
+    print("Raw expectedLifespan: ${json['expectedLifespan']}");
+    print("Raw purchaseDate: ${json['purchaseDate']}");
+
     return Stylus(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      manufacturer: json['manufacturer'],  // Already nullable
-      expectedLifespan: json['expected_lifespan'], // Already nullable
-      purchaseDate: json['purchase_date'] != null
-          ? DateTime.parse(json['purchase_date'])
-          : null,
+      manufacturer: json['manufacturer'], // Already nullable
+      expectedLifespan: json['expectedLifespan'], // Note: camelCase key
+      purchaseDate:
+          json['purchaseDate'] != null
+              ? DateTime.parse(json['purchaseDate'])
+              : null,
       active: json['active'] ?? false,
       primary: json['primary'] ?? false,
-      createdAt: _parseDateTime(json['created_at']),
-      updatedAt: _parseDateTime(json['updated_at']),
+      createdAt: _parseDateTime(json['createdAt']),
+      updatedAt: _parseDateTime(json['updatedAt']),
       owned: json['owned'] ?? true,
-      baseModel: json['base_model'] ?? false,
+      baseModel: json['baseModel'] ?? false,
     );
   }
 
@@ -52,7 +55,7 @@ class Stylus {
     if (dateValue == null) {
       return DateTime.now();
     }
-    
+
     try {
       return DateTime.parse(dateValue.toString());
     } catch (e) {
@@ -66,14 +69,14 @@ class Stylus {
       'id': id,
       'name': name,
       'manufacturer': manufacturer,
-      'expected_lifespan': expectedLifespan,
-      'purchase_date': purchaseDate?.toIso8601String(),
+      'expectedLifespan': expectedLifespan,
+      'purchaseDate': purchaseDate?.toIso8601String(),
       'active': active,
       'primary': primary,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
       'owned': owned,
-      'base_model': baseModel,
+      'baseModel': baseModel,
     };
   }
 }

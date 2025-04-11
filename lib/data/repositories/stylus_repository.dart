@@ -9,39 +9,89 @@ class StylusRepository {
   StylusRepository({required ApiClient apiClient}) : _apiClient = apiClient;
 
   /// Creates a new stylus
-  Future<void> createStylus(Map<String, dynamic> stylusData) async {
+  Future<List<Stylus>> createStylus(Map<String, dynamic> stylusData) async {
     try {
       // Make API call to create stylus
-      await _apiClient.post('/styluses', data: stylusData);
+      final response = await _apiClient.post('/styluses', data: stylusData);
 
-      // No need to return anything - the auth payload will be updated by the API
+      // Parse the response which is expected to be a list
+      if (response.data is List) {
+        // Response is a list of styluses
+        return _parseStyluses(response.data);
+      } else if (response.data is Map) {
+        // Some endpoints might return an object with a styluses field
+        final Map<String, dynamic> data = response.data;
+        if (data.containsKey('styluses') && data['styluses'] is List) {
+          return _parseStyluses(data['styluses']);
+        }
+      }
+
+      // Fallback - return empty list
+      print("Warning: Unexpected response format from create stylus API");
+      return [];
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
   /// Updates an existing stylus
-  Future<void> updateStylus(int id, Map<String, dynamic> stylusData) async {
+  Future<List<Stylus>> updateStylus(
+    int id,
+    Map<String, dynamic> stylusData,
+  ) async {
     try {
       // Make API call to update stylus
-      await _apiClient.put('/styluses/$id', data: stylusData);
+      final response = await _apiClient.put('/styluses/$id', data: stylusData);
 
-      // No need to return anything - the auth payload will be updated by the API
+      // Parse the response which is expected to be a list
+      if (response.data is List) {
+        // Response is a list of styluses
+        return _parseStyluses(response.data);
+      } else if (response.data is Map) {
+        // Some endpoints might return an object with a styluses field
+        final Map<String, dynamic> data = response.data;
+        if (data.containsKey('styluses') && data['styluses'] is List) {
+          return _parseStyluses(data['styluses']);
+        }
+      }
+
+      // Fallback - return empty list
+      print("Warning: Unexpected response format from update stylus API");
+      return [];
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
   /// Deletes a stylus
-  Future<void> deleteStylus(int id) async {
+  Future<List<Stylus>> deleteStylus(int id) async {
     try {
       // Make API call to delete stylus
-      await _apiClient.delete('/styluses/$id');
+      final response = await _apiClient.delete('/styluses/$id');
 
-      // No need to return anything - the auth payload will be updated by the API
+      // Parse the response which is expected to be a list
+      if (response.data is List) {
+        // Response is a list of styluses
+        return _parseStyluses(response.data);
+      } else if (response.data is Map) {
+        // Some endpoints might return an object with a styluses field
+        final Map<String, dynamic> data = response.data;
+        if (data.containsKey('styluses') && data['styluses'] is List) {
+          return _parseStyluses(data['styluses']);
+        }
+      }
+
+      // Fallback - return empty list
+      print("Warning: Unexpected response format from delete stylus API");
+      return [];
     } on DioException catch (e) {
       throw _handleError(e);
     }
+  }
+
+  // Helper method to parse a list of styluses from response
+  List<Stylus> _parseStyluses(List<dynamic> data) {
+    return data.map((item) => Stylus.fromJson(item)).toList();
   }
 
   Exception _handleError(DioException e) {

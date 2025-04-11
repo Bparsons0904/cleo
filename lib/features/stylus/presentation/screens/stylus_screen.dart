@@ -39,6 +39,16 @@ class StylusScreen extends ConsumerWidget {
     List<Stylus> styluses,
     WidgetRef ref,
   ) {
+    // Debug print to see what styluses we have
+    print('Building stylus list with ${styluses.length} styluses');
+    for (var stylus in styluses) {
+      print(
+        'Stylus: ${stylus.name}, id: ${stylus.id}, '
+        'expectedLifespan: ${stylus.expectedLifespan}, '
+        'purchaseDate: ${stylus.purchaseDate}',
+      );
+    }
+
     // Filter active and inactive styluses (that are owned)
     final activeStyluses = styluses.where((s) => s.active).toList();
     final inactiveStyluses =
@@ -171,6 +181,11 @@ class StylusScreen extends ConsumerWidget {
     WidgetRef ref,
     Stylus stylus,
   ) {
+    // Debug print before showing edit dialog
+    print('Showing edit dialog for stylus: ${stylus.name}');
+    print('Expected lifespan: ${stylus.expectedLifespan}');
+    print('Purchase date: ${stylus.purchaseDate}');
+
     showDialog(
       context: context,
       builder:
@@ -186,6 +201,15 @@ class StylusScreen extends ConsumerWidget {
                 onSubmit: (stylusData) async {
                   try {
                     Navigator.of(context).pop(); // Close the dialog
+
+                    // Print the data we're submitting
+                    print('Updating stylus with data:');
+                    print('name: ${stylusData.name}');
+                    print('manufacturer: ${stylusData.manufacturer}');
+                    print('expectedLifespan: ${stylusData.expectedLifespan}');
+                    print('purchaseDate: ${stylusData.purchaseDate}');
+                    print('active: ${stylusData.active}');
+                    print('primary: ${stylusData.primary}');
 
                     // Update the stylus
                     await ref

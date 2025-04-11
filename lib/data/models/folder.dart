@@ -21,9 +21,9 @@ class Folder {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       count: json['count'] ?? 0,
-      resourceUrl: json['resource_url'] ?? '',
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      resourceUrl: json['resourceUrl'] ?? '',
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 
@@ -32,9 +32,9 @@ class Folder {
       'id': id,
       'name': name,
       'count': count,
-      'resource_url': resourceUrl,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'resourceUrl': resourceUrl,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 }

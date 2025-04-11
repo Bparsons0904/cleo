@@ -28,6 +28,11 @@ class StylusCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Debug logging to see what data we're working with
+    print("Rendering StylusCard for: ${stylus.name}");
+    print("Expected lifespan: ${stylus.expectedLifespan}");
+    print("Purchase date: ${stylus.purchaseDate}");
+
     // Get play time from the provider
     final totalPlayTime = ref.watch(stylusPlayTimeProvider(stylus.id));
 

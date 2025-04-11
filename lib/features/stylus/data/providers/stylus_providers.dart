@@ -43,20 +43,31 @@ class StylusesNotifier extends _$StylusesNotifier {
       final stylusData = {
         'name': name,
         'manufacturer': manufacturer,
-        'expected_lifespan': expectedLifespan,
-        'purchase_date': purchaseDate?.toIso8601String(),
+        'expectedLifespan': expectedLifespan, // Using camelCase as in API
+        'purchaseDate':
+            purchaseDate != null
+                ? '${purchaseDate.toIso8601String().split('.')[0]}Z'
+                : null, // Format with Z timezone
         'active': active,
-        'primary': primary,
-        'owned': true,
-        'base_model': false,
+        'primary': primary, 'owned': true,
+        'baseModel': false, // Using camelCase as in API
       };
 
-      // Create stylus - the auth payload will be updated automatically
-      await stylusRepo.createStylus(stylusData);
+      print("Creating stylus with data: $stylusData");
 
-      // No need to update state manually as we're watching the auth state
+      // Create stylus and get the styluses list from the response
+      final styluses = await stylusRepo.createStylus(stylusData);
+
+      // Update our state directly with the new list if it's not empty
+      if (styluses.isNotEmpty) {
+        state = AsyncValue.data(styluses);
+        print("State updated with ${styluses.length} styluses after creation");
+      } else {
+        // If the response was empty, refresh from auth state
+        _refreshFromAuthState();
+      }
     } catch (error) {
-      // The state will be handled through authState updates
+      print("Error creating stylus: $error");
       rethrow; // Allow UI to handle errors
     }
   }
@@ -77,18 +88,30 @@ class StylusesNotifier extends _$StylusesNotifier {
       final stylusData = {
         'name': name,
         'manufacturer': manufacturer,
-        'expected_lifespan': expectedLifespan,
-        'purchase_date': purchaseDate?.toIso8601String(),
+        'expectedLifespan': expectedLifespan, // Using camelCase as in API
+        'purchaseDate':
+            purchaseDate != null
+                ? '${purchaseDate.toIso8601String().split('.')[0]}Z'
+                : null, // Format with Z timezone
         'active': active,
         'primary': primary,
       };
 
-      // Update stylus - the auth payload will be updated automatically
-      await stylusRepo.updateStylus(id, stylusData);
+      print("Updating stylus with ID $id: $stylusData");
 
-      // No need to update state manually as we're watching the auth state
+      // Update stylus and get the styluses list from the response
+      final styluses = await stylusRepo.updateStylus(id, stylusData);
+
+      // Update our state directly with the new list if it's not empty
+      if (styluses.isNotEmpty) {
+        state = AsyncValue.data(styluses);
+        print("State updated with ${styluses.length} styluses after update");
+      } else {
+        // If the response was empty, refresh from auth state
+        _refreshFromAuthState();
+      }
     } catch (error) {
-      // The state will be handled through authState updates
+      print("Error updating stylus: $error");
       rethrow; // Allow UI to handle errors
     }
   }
@@ -98,13 +121,38 @@ class StylusesNotifier extends _$StylusesNotifier {
     try {
       final stylusRepo = ref.read(stylusRepositoryProvider);
 
-      // Delete stylus - the auth payload will be updated automatically
-      await stylusRepo.deleteStylus(id);
+      print("Deleting stylus with ID $id");
 
-      // No need to update state manually as we're watching the auth state
+      // Delete stylus and get the styluses list from the response
+      final styluses = await stylusRepo.deleteStylus(id);
+
+      // Update our state directly with the new list if it's not empty
+      if (styluses.isNotEmpty) {
+        state = AsyncValue.data(styluses);
+        print("State updated with ${styluses.length} styluses after deletion");
+      } else {
+        // If the response was empty, refresh from auth state
+        _refreshFromAuthState();
+      }
     } catch (error) {
-      // The state will be handled through authState updates
+      print("Error deleting stylus: $error");
       rethrow; // Allow UI to handle errors
+    }
+  }
+
+  /// Helper method to refresh state from the auth payload
+  Future<void> _refreshFromAuthState() async {
+    try {
+      final authRepo = ref.read(authRepositoryProvider);
+      final authPayload = await authRepo.getAuthStatus();
+      if (authPayload.styluses.isNotEmpty) {
+        state = AsyncValue.data(authPayload.styluses);
+        print(
+          "State refreshed from auth with ${authPayload.styluses.length} styluses",
+        );
+      }
+    } catch (e) {
+      print("Error refreshing from auth state: $e");
     }
   }
 }
