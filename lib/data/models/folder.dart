@@ -17,14 +17,46 @@ class Folder {
   });
 
   factory Folder.fromJson(Map<String, dynamic> json) {
-    return Folder(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      count: json['count'] ?? 0,
-      resourceUrl: json['resourceUrl'] ?? '',
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-    );
+    try {
+      print("Parsing folder: ${json['name']}");
+
+      return Folder(
+        id: json['id'] ?? 0,
+        name: json['name'] ?? '',
+        count: json['count'] ?? 0,
+        resourceUrl:
+            json['resource_url'] ??
+            json['resourceUrl'] ??
+            '', // Handle both snake_case and camelCase
+        createdAt: _parseDateTime(json['created_at'] ?? json['createdAt']),
+        updatedAt: _parseDateTime(json['updated_at'] ?? json['updatedAt']),
+      );
+    } catch (e) {
+      print("Error parsing folder: $e");
+      // Return a minimal valid object to avoid null errors
+      return Folder(
+        id: json['id'] ?? 0,
+        name: json['name'] ?? 'Unknown Folder',
+        count: 0,
+        resourceUrl: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  // Helper method to safely parse DateTime
+  static DateTime _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) {
+      return DateTime.now();
+    }
+
+    try {
+      return DateTime.parse(dateValue.toString());
+    } catch (e) {
+      print('Error parsing date in Folder: $e');
+      return DateTime.now();
+    }
   }
 
   Map<String, dynamic> toJson() {

@@ -1,5 +1,7 @@
 // lib/features/collection/presentation/screens/collection_screen.dart
 
+import 'package:cleo/features/folders/data/providers/folder_selection_provider.dart';
+import 'package:cleo/features/home/presentation/widgets/folder_selection_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,27 +20,34 @@ class CollectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filteredReleases = ref.watch(filteredCollectionProvider);
     final filterState = ref.watch(collectionFilterProvider);
-    
+
     return Scaffold(
-      appBar: const CleoAppBar(
-        title: 'Your Collection',
+      appBar: CleoAppBar(
+        title:
+            ref.watch(selectedFolderNameProvider) != null
+                ? 'Collection - ${ref.watch(selectedFolderNameProvider)}'
+                : 'Collection',
         showBackButton: false,
+        actions: const [FolderSelectionMenu()],
       ),
       body: Column(
         children: [
           // Search Bar
           const CollectionSearchBar(),
-          
+
           // Filter and Sort Controls
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               children: [
                 // Filter button
                 const FilterSortButton(),
-                
+
                 const Spacer(),
-                
+
                 // View toggle (for desktop/tablet)
                 if (MediaQuery.of(context).size.width >= 600) ...[
                   IconButton(
@@ -57,85 +66,95 @@ class CollectionScreen extends ConsumerWidget {
               ],
             ),
           ),
-          
+
           // Active filters display (optional)
-          if (filterState.hasFilters) _buildActiveFilters(context, filterState, ref),
-          
+          if (filterState.hasFilters)
+            _buildActiveFilters(context, filterState, ref),
+
           // Collection Grid/List
           Expanded(
-            child: filteredReleases.isEmpty
-                ? const _EmptyCollectionView()
-                : _buildCollectionGrid(context, filteredReleases),
+            child:
+                filteredReleases.isEmpty
+                    ? const _EmptyCollectionView()
+                    : _buildCollectionGrid(context, filteredReleases),
           ),
         ],
       ),
     );
   }
-  
-Widget _buildActiveFilters(BuildContext context, CollectionFilterState filterState, ref) {
-  // Display active filters as pills/chips
-  final List<Widget> filterChips = [];
-  
-  // Add genre filters
-  for (final genre in filterState.selectedGenres) {
-    filterChips.add(_buildFilterChip(
-      context,
-      label: genre,
-      onRemove: () {
-        // Use ref instead of context to access the provider
-        ref.read(collectionFilterProvider.notifier).toggleGenre(genre);
-      },
-    ));
-  }
-  
-  // Add play status filter if selected
-  if (filterState.playStatus != null) {
-    String statusLabel;
-    switch (filterState.playStatus!) {
-      case PlayRecencyStatus.recentlyPlayed:
-        statusLabel = 'Recently Played';
-        break;
-      case PlayRecencyStatus.playedThisMonth:
-        statusLabel = 'Played This Month';
-        break;
-      case PlayRecencyStatus.playedThisYear:
-        statusLabel = 'Played This Year';
-        break;
-      case PlayRecencyStatus.notPlayedRecently:
-        statusLabel = 'Not Played Recently';
-        break;
+
+  Widget _buildActiveFilters(
+    BuildContext context,
+    CollectionFilterState filterState,
+    ref,
+  ) {
+    // Display active filters as pills/chips
+    final List<Widget> filterChips = [];
+
+    // Add genre filters
+    for (final genre in filterState.selectedGenres) {
+      filterChips.add(
+        _buildFilterChip(
+          context,
+          label: genre,
+          onRemove: () {
+            // Use ref instead of context to access the provider
+            ref.read(collectionFilterProvider.notifier).toggleGenre(genre);
+          },
+        ),
+      );
     }
-    
-    filterChips.add(_buildFilterChip(
-      context,
-      label: statusLabel,
-      onRemove: () {
-        // Use ref instead of context to access the provider
-        ref.read(collectionFilterProvider.notifier).setPlayStatus(null);
-      },
-    ));
-  }
-  
-  if (filterChips.isEmpty) {
-    return const SizedBox.shrink();
-  }
-  
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (int i = 0; i < filterChips.length; i++) ...[
-            filterChips[i],
-            if (i < filterChips.length - 1) const SizedBox(width: 8),
+
+    // Add play status filter if selected
+    if (filterState.playStatus != null) {
+      String statusLabel;
+      switch (filterState.playStatus!) {
+        case PlayRecencyStatus.recentlyPlayed:
+          statusLabel = 'Recently Played';
+          break;
+        case PlayRecencyStatus.playedThisMonth:
+          statusLabel = 'Played This Month';
+          break;
+        case PlayRecencyStatus.playedThisYear:
+          statusLabel = 'Played This Year';
+          break;
+        case PlayRecencyStatus.notPlayedRecently:
+          statusLabel = 'Not Played Recently';
+          break;
+      }
+
+      filterChips.add(
+        _buildFilterChip(
+          context,
+          label: statusLabel,
+          onRemove: () {
+            // Use ref instead of context to access the provider
+            ref.read(collectionFilterProvider.notifier).setPlayStatus(null);
+          },
+        ),
+      );
+    }
+
+    if (filterChips.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (int i = 0; i < filterChips.length; i++) ...[
+              filterChips[i],
+              if (i < filterChips.length - 1) const SizedBox(width: 8),
+            ],
           ],
-        ],
+        ),
       ),
-    ),
-  );
-}
-  
+    );
+  }
+
   Widget _buildFilterChip(
     BuildContext context, {
     required String label,
@@ -149,12 +168,15 @@ Widget _buildActiveFilters(BuildContext context, CollectionFilterState filterSta
       deleteIconColor: Theme.of(context).colorScheme.onSurfaceVariant,
     );
   }
-  
+
   Widget _buildCollectionGrid(BuildContext context, List<Release> releases) {
     // Determine number of columns based on screen width
     final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth >= 1200 ? 5 : (screenWidth >= 800 ? 4 : (screenWidth >= 600 ? 3 : 2));
-    
+    final crossAxisCount =
+        screenWidth >= 1200
+            ? 5
+            : (screenWidth >= 800 ? 4 : (screenWidth >= 600 ? 3 : 2));
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -174,16 +196,14 @@ Widget _buildActiveFilters(BuildContext context, CollectionFilterState filterSta
 
 class _ReleaseGridItem extends StatelessWidget {
   final Release release;
-  
-  const _ReleaseGridItem({
-    required this.release,
-  });
-  
+
+  const _ReleaseGridItem({required this.release});
+
   @override
   Widget build(BuildContext context) {
     // Debug print to understand what's happening
     print('Release: ${release.title}, Image URL: ${release.thumb}');
-    
+
     return InkWell(
       onTap: () {
         context.go('/record/${release.id}');
@@ -197,7 +217,9 @@ class _ReleaseGridItem extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                release.thumb.isNotEmpty ? release.thumb : 'https://via.placeholder.com/150',
+                release.thumb.isNotEmpty
+                    ? release.thumb
+                    : 'https://via.placeholder.com/150',
                 fit: BoxFit.cover,
                 width: double.infinity,
                 errorBuilder: (context, error, stackTrace) {
@@ -211,7 +233,7 @@ class _ReleaseGridItem extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Album title
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -219,15 +241,13 @@ class _ReleaseGridItem extends StatelessWidget {
               release.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
-          
+
           // Artist name
-          if (release.artists.isNotEmpty && release.artists.first.artist != null)
+          if (release.artists.isNotEmpty &&
+              release.artists.first.artist != null)
             Padding(
               padding: const EdgeInsets.only(top: 2.0),
               child: Text(
@@ -248,7 +268,7 @@ class _ReleaseGridItem extends StatelessWidget {
 
 class _EmptyCollectionView extends StatelessWidget {
   const _EmptyCollectionView();
-  
+
   @override
   Widget build(BuildContext context) {
     return Center(

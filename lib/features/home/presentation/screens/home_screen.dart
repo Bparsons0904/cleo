@@ -1,3 +1,5 @@
+import 'package:cleo/features/folders/data/providers/folder_selection_provider.dart';
+import 'package:cleo/features/home/presentation/widgets/folder_selection_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,26 +12,19 @@ import '../../../collection/data/providers/collection_providers.dart';
 /// Home screen for the Kleio app.
 class HomeScreen extends ConsumerWidget {
   /// Constructor
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kleio'),
+        title: Text(
+          ref.watch(selectedFolderNameProvider) != null
+              ? 'Kleio - ${ref.watch(selectedFolderNameProvider)}'
+              : 'Kleio',
+        ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // Show more options
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => _buildMoreOptions(context),
-              );
-            },
-          ),
-        ],
+        actions: [const FolderSelectionMenu()],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -38,7 +33,9 @@ class HomeScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
               width: double.infinity,
-              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.2),
+              color: Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withOpacity(0.2),
               child: Column(
                 children: [
                   Text(
@@ -163,9 +160,7 @@ class HomeScreen extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -173,9 +168,9 @@ class HomeScreen extends ConsumerWidget {
           children: [
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Row(
@@ -203,7 +198,7 @@ class HomeScreen extends ConsumerWidget {
                         backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12, 
+                          horizontal: 12,
                           vertical: 12,
                         ),
                         shape: RoundedRectangleBorder(
@@ -229,27 +224,30 @@ class HomeScreen extends ConsumerWidget {
         duration: Duration(seconds: 2),
       ),
     );
-    
+
     // Actually trigger the sync using the provider
     final collectionNotifier = ref.read(collectionNotifierProvider.notifier);
-    collectionNotifier.syncCollection().then((_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Collection synced successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    }).catchError((error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sync failed: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
+    collectionNotifier
+        .syncCollection()
+        .then((_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Collection synced successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        })
+        .catchError((error) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Sync failed: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        });
   }
 }

@@ -1,32 +1,33 @@
 // lib/features/log_play/data/providers/log_play_filter_provider.dart
+import 'package:cleo/features/folders/data/providers/folder_selection_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../data/models/models.dart';
-import '../../../auth/data/providers/auth_providers.dart';
 import '../filters/log_play_filter_state.dart';
 
 part 'log_play_filter_provider.g.dart';
 
 /// Provider for log play filter state
-final logPlayFilterProvider = StateNotifierProvider<LogPlayFilterNotifier, LogPlayFilterState>((ref) {
-  return LogPlayFilterNotifier();
-});
+final logPlayFilterProvider =
+    StateNotifierProvider<LogPlayFilterNotifier, LogPlayFilterState>((ref) {
+      return LogPlayFilterNotifier();
+    });
 
 /// Notifier for log play filter state
 class LogPlayFilterNotifier extends StateNotifier<LogPlayFilterState> {
   LogPlayFilterNotifier() : super(const LogPlayFilterState());
-  
+
   /// Update search query
   void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
   }
-  
+
   /// Update sort option
   void setSortOption(LogPlaySortOption option) {
     state = state.copyWith(sortOption: option);
   }
-  
+
   /// Reset all filters
   void resetFilters() {
     state = const LogPlayFilterState();
@@ -35,22 +36,20 @@ class LogPlayFilterNotifier extends StateNotifier<LogPlayFilterState> {
 
 /// Provider for filtered releases based on log play filter
 @riverpod
-List<Release> filteredLogPlayReleases(FilteredLogPlayReleasesRef ref) {
+List<Release> filteredLogPlayReleases(Ref ref) {
   final filterState = ref.watch(logPlayFilterProvider);
-  final authState = ref.watch(authStateNotifierProvider);
-  
-  if (authState is! AsyncData || authState.value?.payload == null) {
-    return [];
-  }
-  
-  final releases = authState.value!.payload!.releases;
-  
-  // Apply search filter
-  List<Release> filteredReleases = _applySearchFilter(releases, filterState.searchQuery);
-  
+  // Use our folder-filtered releases instead of directly from auth state
+  final releases = ref.watch(filteredReleasesByFolderProvider);
+
+  // Apply search filter (keeping your existing logic)
+  List<Release> filteredReleases = _applySearchFilter(
+    releases,
+    filterState.searchQuery,
+  );
+
   // Apply sorting
   _applySorting(filteredReleases, filterState.sortOption);
-  
+
   return filteredReleases;
 }
 
@@ -58,14 +57,15 @@ List<Release> _applySearchFilter(List<Release> releases, String query) {
   if (query.isEmpty) {
     return List.from(releases);
   }
-  
+
   final lowerQuery = query.toLowerCase();
   return releases.where((release) {
     final titleMatch = release.title.toLowerCase().contains(lowerQuery);
-    final artistMatch = release.artists.any((artist) => 
-      artist.artist?.name.toLowerCase().contains(lowerQuery) ?? false
+    final artistMatch = release.artists.any(
+      (artist) =>
+          artist.artist?.name.toLowerCase().contains(lowerQuery) ?? false,
     );
-    
+
     return titleMatch || artistMatch;
   }).toList();
 }
@@ -74,23 +74,27 @@ void _applySorting(List<Release> releases, LogPlaySortOption sortOption) {
   switch (sortOption) {
     case LogPlaySortOption.artistAZ:
       releases.sort((a, b) {
-        final aArtist = a.artists.isNotEmpty && a.artists.first.artist != null
-            ? a.artists.first.artist!.name
-            : '';
-        final bArtist = b.artists.isNotEmpty && b.artists.first.artist != null
-            ? b.artists.first.artist!.name
-            : '';
+        final aArtist =
+            a.artists.isNotEmpty && a.artists.first.artist != null
+                ? a.artists.first.artist!.name
+                : '';
+        final bArtist =
+            b.artists.isNotEmpty && b.artists.first.artist != null
+                ? b.artists.first.artist!.name
+                : '';
         return aArtist.compareTo(bArtist);
       });
       break;
     case LogPlaySortOption.artistZA:
       releases.sort((a, b) {
-        final aArtist = a.artists.isNotEmpty && a.artists.first.artist != null
-            ? a.artists.first.artist!.name
-            : '';
-        final bArtist = b.artists.isNotEmpty && b.artists.first.artist != null
-            ? b.artists.first.artist!.name
-            : '';
+        final aArtist =
+            a.artists.isNotEmpty && a.artists.first.artist != null
+                ? a.artists.first.artist!.name
+                : '';
+        final bArtist =
+            b.artists.isNotEmpty && b.artists.first.artist != null
+                ? b.artists.first.artist!.name
+                : '';
         return bArtist.compareTo(aArtist);
       });
       break;
@@ -109,12 +113,18 @@ void _applySorting(List<Release> releases, LogPlaySortOption sortOption) {
       break;
     case LogPlaySortOption.lastPlayed:
       releases.sort((a, b) {
-        final aLastPlayed = a.playHistory.isNotEmpty
-            ? a.playHistory.map((p) => p.playedAt).reduce((v1, v2) => v1.isAfter(v2) ? v1 : v2)
-            : DateTime(1900);
-        final bLastPlayed = b.playHistory.isNotEmpty
-            ? b.playHistory.map((p) => p.playedAt).reduce((v1, v2) => v1.isAfter(v2) ? v1 : v2)
-            : DateTime(1900);
+        final aLastPlayed =
+            a.playHistory.isNotEmpty
+                ? a.playHistory
+                    .map((p) => p.playedAt)
+                    .reduce((v1, v2) => v1.isAfter(v2) ? v1 : v2)
+                : DateTime(1900);
+        final bLastPlayed =
+            b.playHistory.isNotEmpty
+                ? b.playHistory
+                    .map((p) => p.playedAt)
+                    .reduce((v1, v2) => v1.isAfter(v2) ? v1 : v2)
+                : DateTime(1900);
         return bLastPlayed.compareTo(aLastPlayed);
       });
       break;
@@ -131,10 +141,14 @@ void _applySorting(List<Release> releases, LogPlaySortOption sortOption) {
       releases.sort((a, b) => (a.year ?? 0).compareTo(b.year ?? 0));
       break;
     case LogPlaySortOption.mostPlayed:
-      releases.sort((a, b) => b.playHistory.length.compareTo(a.playHistory.length));
+      releases.sort(
+        (a, b) => b.playHistory.length.compareTo(a.playHistory.length),
+      );
       break;
     case LogPlaySortOption.leastPlayed:
-      releases.sort((a, b) => a.playHistory.length.compareTo(b.playHistory.length));
+      releases.sort(
+        (a, b) => a.playHistory.length.compareTo(b.playHistory.length),
+      );
       break;
   }
 }

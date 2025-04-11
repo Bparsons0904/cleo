@@ -1,16 +1,17 @@
 // lib/features/log_play/presentation/screens/log_play_screen.dart
+import 'package:cleo/core/utils/quick_actions.dart';
+import 'package:cleo/features/folders/data/providers/folder_selection_provider.dart';
+import 'package:cleo/features/home/presentation/widgets/folder_selection_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/widgets.dart';
 import '../../../../data/models/models.dart';
-import '../../../auth/data/providers/auth_providers.dart';
 import '../../data/providers/log_play_filter_provider.dart';
 import '../../data/providers/log_play_providers.dart';
 import '../widgets/log_play_search_bar.dart';
 import '../widgets/log_play_sort_dropdown.dart';
-import 'log_play_detail_screen.dart';
 
 class LogPlayScreen extends ConsumerWidget {
   const LogPlayScreen({super.key});
@@ -19,11 +20,15 @@ class LogPlayScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Get filtered releases
     final filteredReleases = ref.watch(filteredLogPlayReleasesProvider);
-    
+
     return Scaffold(
-      appBar: const CleoAppBar(
-        title: 'Log Play & Cleaning',
+      appBar: CleoAppBar(
+        title:
+            ref.watch(selectedFolderNameProvider) != null
+                ? 'Log Play - ${ref.watch(selectedFolderNameProvider)}'
+                : 'Log Play',
         showBackButton: false,
+        actions: const [FolderSelectionMenu()],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,52 +42,47 @@ class LogPlayScreen extends ConsumerWidget {
               style: TextStyle(fontSize: 16),
             ),
           ),
-          
+
           // Search bar
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: LogPlaySearchBar(),
           ),
-          
+
           // Sort dropdown
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: LogPlaySortDropdown(),
           ),
-          
+
           // Collection grid
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
               'Your Collection',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Collection grid
-          Expanded(
-            child: _buildCollectionGrid(context, filteredReleases),
-          ),
+          Expanded(child: _buildCollectionGrid(context, filteredReleases)),
         ],
       ),
     );
   }
-  
+
   Widget _buildCollectionGrid(BuildContext context, List<Release> releases) {
     if (releases.isEmpty) {
       return const Center(
         child: Text('No records found. Try a different search term.'),
       );
     }
-    
+
     // Determine number of columns based on screen width
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth >= 600 ? 3 : 2;
-    
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -100,26 +100,50 @@ class LogPlayScreen extends ConsumerWidget {
   }
 }
 
-
 class ReleaseGridItem extends ConsumerWidget {
   final Release release;
-  
+
   const ReleaseGridItem({super.key, required this.release});
-  
+
+  // Update the ReleaseGridItem build method
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Get artist name
-    final artistName = release.artists.isNotEmpty && release.artists.first.artist != null
-        ? release.artists.first.artist!.name
-        : 'Unknown Artist';
-    
+    final artistName =
+        release.artists.isNotEmpty && release.artists.first.artist != null
+            ? release.artists.first.artist!.name
+            : 'Unknown Artist';
+
     // Get release year if available
     final releaseYear = release.year?.toString() ?? '';
-    
+
     // Watch log play state to handle loading
     final logPlayState = ref.watch(logPlayNotifierProvider);
     final isLoading = logPlayState is AsyncLoading;
-    
+
+    // Calculate play recency score and color
+    final lastPlayedDate = RecordStatusUtils.getLastPlayDate(
+      release.playHistory,
+    );
+    final playRecencyScore = RecordStatusUtils.getPlayRecencyScore(
+      lastPlayedDate,
+    );
+    final playColor = RecordStatusUtils.getPlayRecencyColor(playRecencyScore);
+
+    // Calculate cleanliness score and color
+    final lastCleanedDate = RecordStatusUtils.getLastCleaningDate(
+      release.cleaningHistory,
+    );
+    final playsSinceCleaning = RecordStatusUtils.countPlaysSinceCleaning(
+      release.playHistory,
+      lastCleanedDate,
+    );
+    final cleanlinessScore = RecordStatusUtils.getCleanlinessScore(
+      lastCleanedDate,
+      playsSinceCleaning,
+    );
+    final cleanColor = RecordStatusUtils.getCleanlinessColor(cleanlinessScore);
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -134,24 +158,23 @@ class ReleaseGridItem extends ConsumerWidget {
                 children: [
                   release.thumb.isNotEmpty
                       ? Image.network(
-                          release.thumb,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, _) => _buildPlaceholderImage(),
-                        )
+                        release.thumb,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder:
+                            (context, error, _) => _buildPlaceholderImage(),
+                      )
                       : _buildPlaceholderImage(),
                   // Show loading indicator if an action is in progress
                   if (isLoading)
                     Container(
                       color: Colors.black.withOpacity(0.3),
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: const Center(child: CircularProgressIndicator()),
                     ),
                 ],
               ),
             ),
-            
+
             // Title and artist
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -184,7 +207,7 @@ class ReleaseGridItem extends ConsumerWidget {
                 ],
               ),
             ),
-            
+
             // Action buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
@@ -194,16 +217,20 @@ class ReleaseGridItem extends ConsumerWidget {
                   _buildActionButton(
                     context: context,
                     onPressed: () => _handleQuickPlay(context, ref),
-                    color: Colors.blue.shade200,
                     icon: Icons.play_arrow,
-                    tooltip: 'Quick Play',
+                    tooltip: RecordStatusUtils.getPlayRecencyText(
+                      lastPlayedDate,
+                    ),
+                    color: playColor,
                   ),
                   _buildActionButton(
                     context: context,
                     onPressed: () => _handleQuickCleaning(context, ref),
-                    color: Colors.green.shade200,
                     icon: Icons.cleaning_services,
-                    tooltip: 'Quick Clean',
+                    tooltip: RecordStatusUtils.getCleanlinessText(
+                      cleanlinessScore,
+                    ),
+                    color: cleanColor,
                   ),
                 ],
               ),
@@ -213,7 +240,7 @@ class ReleaseGridItem extends ConsumerWidget {
       ),
     );
   }
-  
+
   Widget _buildPlaceholderImage() {
     return Container(
       color: Colors.grey.shade300,
@@ -222,13 +249,13 @@ class ReleaseGridItem extends ConsumerWidget {
       ),
     );
   }
-  
+
   Widget _buildActionButton({
     required BuildContext context,
     required VoidCallback onPressed,
-    required Color color,
     required IconData icon,
     required String tooltip,
+    required Color color,
   }) {
     return Tooltip(
       message: tooltip,
@@ -237,20 +264,17 @@ class ReleaseGridItem extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, size: 20),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          child: Icon(icon, size: 20, color: Colors.white),
         ),
       ),
     );
   }
-  
+
   void _navigateToDetailScreen(BuildContext context, Release release) {
     context.push('/log-play-detail/${release.id}');
   }
-  
+
   void _handleQuickPlay(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(logPlayNotifierProvider.notifier).quickLogPlay(release.id);
@@ -270,10 +294,12 @@ class ReleaseGridItem extends ConsumerWidget {
       }
     }
   }
-  
+
   void _handleQuickCleaning(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(logPlayNotifierProvider.notifier).quickLogCleaning(release.id);
+      await ref
+          .read(logPlayNotifierProvider.notifier)
+          .quickLogCleaning(release.id);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Logged cleaning for "${release.title}"')),

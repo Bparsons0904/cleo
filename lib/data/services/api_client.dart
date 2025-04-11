@@ -8,10 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
   late final Dio _dio;
-  
+
   ApiClient() {
     final baseUrl = AppConfig().baseUrl;
-    
+
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
@@ -40,12 +40,16 @@ class ApiClient {
           return _onRequest(options, handler);
         },
         onResponse: (response, handler) {
-          print('✅ RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+          print(
+            '✅ RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}',
+          );
           print('Response: ${response.data}');
           return _onResponse(response, handler);
         },
         onError: (error, handler) {
-          print('❌ ERROR[${error.response?.statusCode}] => PATH: ${error.requestOptions.path}');
+          print(
+            '❌ ERROR[${error.response?.statusCode}] => PATH: ${error.requestOptions.path}',
+          );
           print('Error: ${error.message}');
           if (error.response != null) {
             print('Response data: ${error.response?.data}');
@@ -57,91 +61,85 @@ class ApiClient {
 
     // Add logging interceptor in debug mode
     if (kDebugMode) {
-      _dio.interceptors.add(LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: true,
-        responseBody: true,
-        error: true,
-      ));
+      _dio.interceptors.add(
+        LogInterceptor(
+          request: true,
+          requestHeader: true,
+          requestBody: true,
+          responseHeader: true,
+          responseBody: true,
+          error: true,
+        ),
+      );
     }
   }
 
-// In the ApiClient class, let's add more debugging
-void _onRequest(
-  RequestOptions options,
-  RequestInterceptorHandler handler,
-) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('auth_token');
+  // In the ApiClient class, let's add more debugging
+  void _onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    print('🚀 Making request to: ${options.baseUrl}${options.path}');
 
-  print('🚀 Making request to: ${options.baseUrl}${options.path}');
-  
-  if (token != null) {
-    options.headers['Authorization'] = 'Bearer $token';
-    print('🔐 Token found in storage, adding to request');
-  } else {
-    print('🔐 No token found in storage');
+    // No token handling needed, the backend knows about it
+    // Remove the token header logic completely
+
+    handler.next(options);
   }
 
-  handler.next(options);
-}
-
   // Response interceptor (you can process common response patterns here)
-  void _onResponse(
-  Response response,
-  ResponseInterceptorHandler handler,
-) {
-  if (response.requestOptions.path.contains('/auth')) {
-    print("===== BEGIN AUTH RESPONSE DATA =====");
-    
-    // If the response contains 'releases', log the first one in detail
-    if (response.data is Map && response.data.containsKey('releases') && 
-        response.data['releases'] is List && response.data['releases'].isNotEmpty) {
-      
-      final firstRelease = response.data['releases'][0];
-      print("First release:");
-      print(const JsonEncoder.withIndent('  ').convert(firstRelease));
-      
-      // Log key field types for the first release
-      print("id: ${firstRelease['id']} (${firstRelease['id'].runtimeType})");
-      print("title: ${firstRelease['title']} (${firstRelease['title'].runtimeType})");
-      
-      // Log specific nested structure details
-      if (firstRelease.containsKey('labels') && 
-          firstRelease['labels'] is List && 
-          firstRelease['labels'].isNotEmpty) {
-        
-        final firstLabel = firstRelease['labels'][0];
-        print("First label:");
-        print(const JsonEncoder.withIndent('  ').convert(firstLabel));
-        
-        if (firstLabel.containsKey('label')) {
-          print("Label object:");
-          print(const JsonEncoder.withIndent('  ').convert(firstLabel['label']));
-          
-          // Log each field type
-          final labelObj = firstLabel['label'];
-          if (labelObj is Map) {
-            labelObj.forEach((key, value) {
-              print("$key: $value (${value?.runtimeType})");
-            });
+  void _onResponse(Response response, ResponseInterceptorHandler handler) {
+    if (response.requestOptions.path.contains('/auth')) {
+      print("===== BEGIN AUTH RESPONSE DATA =====");
+
+      // If the response contains 'releases', log the first one in detail
+      if (response.data is Map &&
+          response.data.containsKey('releases') &&
+          response.data['releases'] is List &&
+          response.data['releases'].isNotEmpty) {
+        final firstRelease = response.data['releases'][0];
+        print("First release:");
+        print(const JsonEncoder.withIndent('  ').convert(firstRelease));
+
+        // Log key field types for the first release
+        print("id: ${firstRelease['id']} (${firstRelease['id'].runtimeType})");
+        print(
+          "title: ${firstRelease['title']} (${firstRelease['title'].runtimeType})",
+        );
+
+        // Log specific nested structure details
+        if (firstRelease.containsKey('labels') &&
+            firstRelease['labels'] is List &&
+            firstRelease['labels'].isNotEmpty) {
+          final firstLabel = firstRelease['labels'][0];
+          print("First label:");
+          print(const JsonEncoder.withIndent('  ').convert(firstLabel));
+
+          if (firstLabel.containsKey('label')) {
+            print("Label object:");
+            print(
+              const JsonEncoder.withIndent('  ').convert(firstLabel['label']),
+            );
+
+            // Log each field type
+            final labelObj = firstLabel['label'];
+            if (labelObj is Map) {
+              labelObj.forEach((key, value) {
+                print("$key: $value (${value?.runtimeType})");
+              });
+            }
           }
         }
       }
+
+      print("===== END AUTH RESPONSE DATA =====");
     }
-    
-    print("===== END AUTH RESPONSE DATA =====");
+
+    handler.next(response);
   }
-  
-  handler.next(response);
-}
+
   // Error interceptor
-  void _onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) {
+  void _onError(DioException err, ErrorInterceptorHandler handler) {
     // Handle common error scenarios
     if (err.response?.statusCode == 401) {
       // Handle unauthorized (token expired)
@@ -193,6 +191,4 @@ void _onRequest(
   }) async {
     return _dio.delete(path, data: data, queryParameters: queryParameters);
   }
-
 }
-
