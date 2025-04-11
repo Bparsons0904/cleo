@@ -1,14 +1,15 @@
 // lib/features/analytics/presentation/screens/analytics_screen.dart
+import 'package:cleo/features/analytics/presentation/widgets/analytics_distrubution.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/widgets/widgets.dart';
 import '../../../../data/models/models.dart';
 import '../../../auth/data/providers/auth_providers.dart';
-import '../providers/analytics_providers.dart';
-import '../widgets/distribution_analysis.dart';
+import '../../providers/analytics_providers.dart';
+import '../widgets/records_played_chart.dart';
+import '../widgets/listening_time_chart.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
@@ -88,7 +89,7 @@ class AnalyticsScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Filter Controls
+            // Filter Controls - Now stacked vertically on mobile
             _buildFilterControls(
               context,
               ref,
@@ -104,7 +105,7 @@ class AnalyticsScreen extends ConsumerWidget {
             _buildAnalyticsSection(
               context,
               'Records Played Over Time',
-              _buildPlayCountChart(playCountData, context),
+              RecordsPlayedChart(data: playCountData),
             ),
 
             const SizedBox(height: 24),
@@ -113,7 +114,7 @@ class AnalyticsScreen extends ConsumerWidget {
             _buildAnalyticsSection(
               context,
               'Listening Time Over Time',
-              _buildPlayDurationChart(playDurationData, context),
+              ListeningTimeChart(data: playDurationData),
             ),
 
             const SizedBox(height: 24),
@@ -152,100 +153,183 @@ class AnalyticsScreen extends ConsumerWidget {
     String filterOption,
     List<Release> releases,
   ) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Time Period Filter
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Time Period:'),
-                const SizedBox(height: 8),
-                _buildDropdown<AnalyticsPeriod>(
-                  value: timePeriod,
-                  items:
-                      AnalyticsPeriod.values
-                          .map(
-                            (period) => DropdownMenuItem(
-                              value: period,
-                              child: Text(_getPeriodLabel(period)),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(analyticsPeriodProvider.notifier).state = value;
-                    }
-                  },
+    // Use LayoutBuilder to adjust based on screen width
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+
+        if (isMobile) {
+          // Stack controls vertically on mobile
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Time Period
+              const Text('Time Period:'),
+              const SizedBox(height: 8),
+              _buildDropdown<AnalyticsPeriod>(
+                value: timePeriod,
+                items:
+                    AnalyticsPeriod.values
+                        .map(
+                          (period) => DropdownMenuItem(
+                            value: period,
+                            child: Text(_getPeriodLabel(period)),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    ref.read(analyticsPeriodProvider.notifier).state = value;
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Group By
+              const Text('Group By:'),
+              const SizedBox(height: 8),
+              _buildDropdown<AnalyticsGroupBy>(
+                value: groupByOption,
+                items:
+                    AnalyticsGroupBy.values
+                        .map(
+                          (option) => DropdownMenuItem(
+                            value: option,
+                            child: Text(_getGroupByLabel(option)),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    ref.read(analyticsGroupByProvider.notifier).state = value;
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Filter by Record/Artist/Genre
+              const Text('Filter by Record/Artist/Genre:'),
+              const SizedBox(height: 8),
+              _buildDropdown<String>(
+                value: filterOption,
+                items:
+                    _getFilterOptions(releases)
+                        .map(
+                          (option) => DropdownMenuItem(
+                            value: option,
+                            child: Text(option),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    ref.read(analyticsFilterProvider.notifier).state = value;
+                  }
+                },
+              ),
+            ],
+          );
+        } else {
+          // Row layout for tablet/desktop
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Time Period Filter
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Time Period:'),
+                    const SizedBox(height: 8),
+                    _buildDropdown<AnalyticsPeriod>(
+                      value: timePeriod,
+                      items:
+                          AnalyticsPeriod.values
+                              .map(
+                                (period) => DropdownMenuItem(
+                                  value: period,
+                                  child: Text(_getPeriodLabel(period)),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(analyticsPeriodProvider.notifier).state =
+                              value;
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          const SizedBox(width: 16),
+              const SizedBox(width: 16),
 
-          // Group By Filter
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Group By:'),
-                const SizedBox(height: 8),
-                _buildDropdown<AnalyticsGroupBy>(
-                  value: groupByOption,
-                  items:
-                      AnalyticsGroupBy.values
-                          .map(
-                            (option) => DropdownMenuItem(
-                              value: option,
-                              child: Text(_getGroupByLabel(option)),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(analyticsGroupByProvider.notifier).state = value;
-                    }
-                  },
+              // Group By Filter
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Group By:'),
+                    const SizedBox(height: 8),
+                    _buildDropdown<AnalyticsGroupBy>(
+                      value: groupByOption,
+                      items:
+                          AnalyticsGroupBy.values
+                              .map(
+                                (option) => DropdownMenuItem(
+                                  value: option,
+                                  child: Text(_getGroupByLabel(option)),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(analyticsGroupByProvider.notifier).state =
+                              value;
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          const SizedBox(width: 16),
+              const SizedBox(width: 16),
 
-          // Record/Artist/Genre Filter
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Filter by Record/Artist/Genre:'),
-                const SizedBox(height: 8),
-                _buildDropdown<String>(
-                  value: filterOption,
-                  items:
-                      _getFilterOptions(releases)
-                          .map(
-                            (option) => DropdownMenuItem(
-                              value: option,
-                              child: Text(option),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(analyticsFilterProvider.notifier).state = value;
-                    }
-                  },
+              // Record/Artist/Genre Filter
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Filter by Record/Artist/Genre:'),
+                    const SizedBox(height: 8),
+                    _buildDropdown<String>(
+                      value: filterOption,
+                      items:
+                          _getFilterOptions(releases)
+                              .map(
+                                (option) => DropdownMenuItem(
+                                  value: option,
+                                  child: Text(option),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(analyticsFilterProvider.notifier).state =
+                              value;
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
+              ),
+            ],
+          );
+        }
+      },
     );
   }
 
@@ -255,6 +339,7 @@ class AnalyticsScreen extends ConsumerWidget {
     required void Function(T?) onChanged,
   }) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
@@ -305,214 +390,7 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPlayCountChart(List<ChartData> data, BuildContext context) {
-    if (data.isEmpty) {
-      return const Center(
-        child: Text('No data available for selected filters'),
-      );
-    }
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: true, horizontalInterval: 1),
-        titlesData: FlTitlesData(
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                // Only show some labels to avoid crowding
-                if (value.toInt() % 3 != 0 &&
-                    value.toInt() != data.length - 1) {
-                  return const SizedBox.shrink();
-                }
-
-                // Get the label for this index
-                if (value.toInt() >= 0 && value.toInt() < data.length) {
-                  final label = data[value.toInt()].label;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      label,
-                      style: const TextStyle(fontSize: 10, color: Colors.grey),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-              reservedSize: 30,
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Text(
-                    value.toInt().toString(),
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                  ),
-                );
-              },
-              reservedSize: 30,
-            ),
-          ),
-        ),
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: Colors.grey.shade200, width: 1),
-        ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: List.generate(
-              data.length,
-              (index) => FlSpot(index.toDouble(), data[index].count.toDouble()),
-            ),
-            isCurved: true,
-            color: Colors.blue.shade300,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter:
-                  (spot, percent, barData, index) => FlDotCirclePainter(
-                    radius: 4,
-                    color: Colors.blue,
-                    strokeWidth: 1,
-                    strokeColor: Colors.white,
-                  ),
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              color: Colors.blue.shade100.withOpacity(0.3),
-            ),
-          ),
-        ],
-        minY: 0,
-      ),
-    );
-  }
-
-  Widget _buildPlayDurationChart(List<ChartData> data, BuildContext context) {
-    if (data.isEmpty) {
-      return const Center(
-        child: Text('No data available for selected filters'),
-      );
-    }
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          horizontalInterval: 60, // 1 hour interval
-        ),
-        titlesData: FlTitlesData(
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                // Only show some labels to avoid crowding
-                if (value.toInt() % 3 != 0 &&
-                    value.toInt() != data.length - 1) {
-                  return const SizedBox.shrink();
-                }
-
-                // Get the label for this index
-                if (value.toInt() >= 0 && value.toInt() < data.length) {
-                  final label = data[value.toInt()].label;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      label,
-                      style: const TextStyle(fontSize: 10, color: Colors.grey),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-              reservedSize: 30,
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                // Format as hours and minutes
-                final hours = (value ~/ 60);
-                final minutes = (value % 60).toInt();
-                String label;
-
-                if (hours > 0) {
-                  label = '${hours}h';
-                  if (minutes > 0) {
-                    label += ' ${minutes}m';
-                  }
-                } else {
-                  label = '${minutes}m';
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Text(
-                    label,
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                  ),
-                );
-              },
-              reservedSize: 40,
-            ),
-          ),
-        ),
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: Colors.grey.shade200, width: 1),
-        ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: List.generate(
-              data.length,
-              (index) =>
-                  FlSpot(index.toDouble(), data[index].duration.toDouble()),
-            ),
-            isCurved: true,
-            color: Colors.teal.shade300,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter:
-                  (spot, percent, barData, index) => FlDotCirclePainter(
-                    radius: 4,
-                    color: Colors.teal,
-                    strokeWidth: 1,
-                    strokeColor: Colors.white,
-                  ),
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              color: Colors.teal.shade100.withOpacity(0.3),
-            ),
-          ),
-        ],
-        minY: 0,
-      ),
-    );
-  }
-
   // Helper methods for filtering and data processing
-
   List<PlayHistory> _filterPlayHistory(
     List<PlayHistory> playHistory,
     List<Release> releases,
@@ -526,14 +404,19 @@ class AnalyticsScreen extends ConsumerWidget {
     switch (period) {
       case AnalyticsPeriod.last7Days:
         startDate = now.subtract(const Duration(days: 7));
+        break;
       case AnalyticsPeriod.last30Days:
         startDate = now.subtract(const Duration(days: 30));
+        break;
       case AnalyticsPeriod.last90Days:
         startDate = now.subtract(const Duration(days: 90));
+        break;
       case AnalyticsPeriod.lastYear:
         startDate = now.subtract(const Duration(days: 365));
+        break;
       case AnalyticsPeriod.allTime:
         startDate = DateTime(1900); // Far in the past
+        break;
     }
 
     var filtered =
@@ -598,6 +481,7 @@ class AnalyticsScreen extends ConsumerWidget {
           }
           grouped[day]!.add(play);
         }
+        break;
 
       case AnalyticsGroupBy.weekly:
         // Group by week
@@ -612,6 +496,7 @@ class AnalyticsScreen extends ConsumerWidget {
           }
           grouped[week]!.add(play);
         }
+        break;
 
       case AnalyticsGroupBy.monthly:
         // Group by month
@@ -622,6 +507,7 @@ class AnalyticsScreen extends ConsumerWidget {
           }
           grouped[month]!.add(play);
         }
+        break;
 
       case AnalyticsGroupBy.artist:
         // Group by artist
@@ -641,6 +527,7 @@ class AnalyticsScreen extends ConsumerWidget {
           }
           grouped[artistName]!.add(play);
         }
+        break;
 
       case AnalyticsGroupBy.genre:
         // Group by primary genre
@@ -660,6 +547,7 @@ class AnalyticsScreen extends ConsumerWidget {
           }
           grouped[genreName]!.add(play);
         }
+        break;
     }
 
     return grouped;
