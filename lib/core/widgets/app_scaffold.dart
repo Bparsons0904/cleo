@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../routing/app_router.dart';
-import '../theme/theme.dart';
 
 /// A scaffold widget that provides the main layout for the app
 /// including navigation controls.
@@ -11,10 +10,7 @@ class AppScaffold extends StatefulWidget {
   final Widget child;
 
   /// Constructor
-  const AppScaffold({
-    Key? key,
-    required this.child,
-  }) : super(key: key);
+  const AppScaffold({super.key, required this.child});
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -23,7 +19,7 @@ class AppScaffold extends StatefulWidget {
 class _AppScaffoldState extends State<AppScaffold> {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    
+
     if (location.startsWith(AppRoutes.home)) {
       return 0;
     } else if (location.startsWith(AppRoutes.logPlay)) {
@@ -33,7 +29,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     } else if (location.startsWith(AppRoutes.playHistory)) {
       return 3;
     }
-    
+
     return 0;
   }
 
@@ -46,7 +42,9 @@ class _AppScaffoldState extends State<AppScaffold> {
         onTap: (index) => _onItemTapped(index, context),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        unselectedItemColor: Theme.of(
+          context,
+        ).colorScheme.onSurface.withOpacity(0.6),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),

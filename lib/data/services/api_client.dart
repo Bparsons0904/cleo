@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:cleo/config.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
   late final Dio _dio;

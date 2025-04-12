@@ -24,7 +24,7 @@ class LogPlayScreen extends ConsumerWidget {
     return Scaffold(
       appBar: CleoAppBar(
         title:
-            ref.watch(selectedFolderNameProvider) != null
+            ref.watch(selectedFolderNameProvider) != ""
                 ? 'Log Play - ${ref.watch(selectedFolderNameProvider)}'
                 : 'Log Play',
         showBackButton: false,

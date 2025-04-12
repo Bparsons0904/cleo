@@ -24,7 +24,7 @@ class CollectionScreen extends ConsumerWidget {
     return Scaffold(
       appBar: CleoAppBar(
         title:
-            ref.watch(selectedFolderNameProvider) != null
+            ref.watch(selectedFolderNameProvider) != ""
                 ? 'Collection - ${ref.watch(selectedFolderNameProvider)}'
                 : 'Collection',
         showBackButton: false,

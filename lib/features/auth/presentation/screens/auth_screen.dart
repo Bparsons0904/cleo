@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/theme/theme.dart';
 import '../../data/providers/auth_providers.dart';
 
 /// Authentication screen for entering Discogs API token

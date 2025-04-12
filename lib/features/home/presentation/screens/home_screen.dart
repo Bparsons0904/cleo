@@ -19,12 +19,12 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          ref.watch(selectedFolderNameProvider) != null
+          ref.watch(selectedFolderNameProvider) != ""
               ? 'Kleio - ${ref.watch(selectedFolderNameProvider)}'
               : 'Kleio',
         ),
         centerTitle: true,
-        actions: [const FolderSelectionMenu()],
+        actions: const [FolderSelectionMenu()],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -64,42 +64,42 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMoreOptions(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.settings_input_component),
-            title: const Text('Styluses'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push(AppRoutes.stylus);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Analytics'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push(AppRoutes.analytics);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              // Navigate to settings when implemented
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings - Coming soon')),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildMoreOptions(BuildContext context) {
+  //   return SafeArea(
+  //     child: Column(
+  //       mainAxisSize: MainAxisSize.min,
+  //       children: [
+  //         ListTile(
+  //           leading: const Icon(Icons.settings_input_component),
+  //           title: const Text('Styluses'),
+  //           onTap: () {
+  //             Navigator.pop(context);
+  //             context.push(AppRoutes.stylus);
+  //           },
+  //         ),
+  //         ListTile(
+  //           leading: const Icon(Icons.analytics),
+  //           title: const Text('Analytics'),
+  //           onTap: () {
+  //             Navigator.pop(context);
+  //             context.push(AppRoutes.analytics);
+  //           },
+  //         ),
+  //         ListTile(
+  //           leading: const Icon(Icons.settings),
+  //           title: const Text('Settings'),
+  //           onTap: () {
+  //             Navigator.pop(context);
+  //             // Navigate to settings when implemented
+  //             ScaffoldMessenger.of(context).showSnackBar(
+  //               const SnackBar(content: Text('Settings - Coming soon')),
+  //             );
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildActionCardsList(BuildContext context, WidgetRef ref) {
     return Column(

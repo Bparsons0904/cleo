@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../models/play_history.dart';
@@ -8,7 +7,8 @@ import '../services/api_client.dart';
 class PlayHistoryRepository {
   final ApiClient _apiClient;
 
-  PlayHistoryRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+  PlayHistoryRepository({required ApiClient apiClient})
+    : _apiClient = apiClient;
 
   Future<PlayHistory> logPlay({
     required int releaseId,
@@ -24,9 +24,10 @@ class PlayHistoryRepository {
         'playedAt': playedAt.toUtc().toIso8601String(),
         'notes': notes,
       };
-      
-      final response = await _apiClient.post('/plays', data: requestData);
-      
+
+      // final response = await _apiClient.post('/plays', data: requestData);
+      await _apiClient.post('/plays', data: requestData);
+
       // If response is successful but doesn't match expected format, return basic object
       return PlayHistory(
         id: 0,
@@ -45,7 +46,7 @@ class PlayHistoryRepository {
   Future<Map<int, int>> getPlayCounts() async {
     try {
       final response = await _apiClient.get('/plays/counts');
-      
+
       // Convert from JSON to Map<int, int>
       final Map<String, dynamic> data = response.data;
       return data.map((key, value) => MapEntry(int.parse(key), value as int));
@@ -57,14 +58,13 @@ class PlayHistoryRepository {
   Future<List<PlayHistory>> getRecentPlays() async {
     try {
       final response = await _apiClient.get('/plays/recent');
-      
+
       final List<dynamic> results = response.data;
       return results.map((json) => PlayHistory.fromJson(json)).toList();
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
-
 
   Exception _handleError(DioException e) {
     if (e.response?.statusCode == 401) {
@@ -91,7 +91,7 @@ class PlayHistoryRepository {
         'stylusId': stylusId,
         'notes': notes,
       };
-      
+
       await _apiClient.put('/plays/$playId', data: requestData);
       return true;
     } on DioException catch (e) {
@@ -107,5 +107,5 @@ class PlayHistoryRepository {
     } on DioException catch (e) {
       throw _handleError(e);
     }
-  }  
+  }
 }

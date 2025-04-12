@@ -11,9 +11,7 @@ final getIt = GetIt.instance;
 
 void setupRepositories() {
   // Register API client
-  getIt.registerSingleton<ApiClient>(
-    ApiClient(baseUrl: 'https://api.kleioapp.com'),
-  );
+  getIt.registerSingleton<ApiClient>(ApiClient());
 
   // Register repositories
   getIt.registerSingleton<AuthRepository>(

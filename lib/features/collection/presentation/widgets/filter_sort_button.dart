@@ -7,14 +7,14 @@ import '../../data/providers/collection_filter_provider.dart';
 import 'filter_sort_button_sheet.dart';
 
 class FilterSortButton extends ConsumerWidget {
-  const FilterSortButton({Key? key}) : super(key: key);
+  const FilterSortButton({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filterState = ref.watch(collectionFilterProvider);
     final hasFilters = filterState.hasFilters;
     final activeFilterCount = filterState.activeFilterCount;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -24,14 +24,16 @@ class FilterSortButton extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           decoration: BoxDecoration(
             border: Border.all(
-              color: hasFilters
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline,
+              color:
+                  hasFilters
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
             ),
             borderRadius: CleoSpacing.borderRadius,
-            color: hasFilters
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                : null,
+            color:
+                hasFilters
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                    : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -39,17 +41,19 @@ class FilterSortButton extends ConsumerWidget {
               Icon(
                 Icons.filter_list,
                 size: 20,
-                color: hasFilters
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface,
+                color:
+                    hasFilters
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(width: 8),
               Text(
                 'Filter & Sort',
                 style: TextStyle(
-                  color: hasFilters
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface,
+                  color:
+                      hasFilters
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
                   fontWeight: hasFilters ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
@@ -77,7 +81,7 @@ class FilterSortButton extends ConsumerWidget {
       ),
     );
   }
-  
+
   void _showFilterSortBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,

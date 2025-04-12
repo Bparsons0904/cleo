@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../models/cleaning_history.dart';
@@ -8,7 +7,8 @@ import '../services/api_client.dart';
 class CleaningHistoryRepository {
   final ApiClient _apiClient;
 
-  CleaningHistoryRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+  CleaningHistoryRepository({required ApiClient apiClient})
+    : _apiClient = apiClient;
 
   Future<CleaningHistory> logCleaning({
     required int releaseId,
@@ -22,9 +22,10 @@ class CleaningHistoryRepository {
         'cleanedAt': cleanedAt.toUtc().toIso8601String(),
         'notes': notes,
       };
-      
-      final response = await _apiClient.post('/cleanings', data: requestData);
-      
+
+      // final response = await _apiClient.post('/cleanings', data: requestData);
+      await _apiClient.post('/cleanings', data: requestData);
+
       // If response is successful but doesn't match expected format, return basic object
       return CleaningHistory(
         id: 0,
@@ -42,7 +43,7 @@ class CleaningHistoryRepository {
   Future<Map<int, int>> getCleaningCounts() async {
     try {
       final response = await _apiClient.get('/cleanings/counts');
-      
+
       // Convert from JSON to Map<int, int>
       final Map<String, dynamic> data = response.data;
       return data.map((key, value) => MapEntry(int.parse(key), value as int));
@@ -50,7 +51,6 @@ class CleaningHistoryRepository {
       throw _handleError(e);
     }
   }
-
 
   Exception _handleError(DioException e) {
     if (e.response?.statusCode == 401) {
@@ -75,7 +75,7 @@ class CleaningHistoryRepository {
         'cleanedAt': cleanedAt.toUtc().toIso8601String(),
         'notes': notes,
       };
-      
+
       await _apiClient.put('/cleanings/$cleaningId', data: requestData);
       return true;
     } on DioException catch (e) {
@@ -93,4 +93,3 @@ class CleaningHistoryRepository {
     }
   }
 }
-

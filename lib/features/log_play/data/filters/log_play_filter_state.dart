@@ -1,5 +1,4 @@
 // lib/features/log_play/data/filters/log_play_filter_state.dart
-import 'package:flutter/material.dart';
 
 enum LogPlaySortOption {
   artistAZ,
@@ -8,7 +7,7 @@ enum LogPlaySortOption {
   albumZA,
   genre,
   lastPlayed,
-  recentlyPlayed, 
+  recentlyPlayed,
   releaseYear,
   mostPlayed,
   leastPlayed,
@@ -17,12 +16,12 @@ enum LogPlaySortOption {
 class LogPlayFilterState {
   final String searchQuery;
   final LogPlaySortOption sortOption;
-  
+
   const LogPlayFilterState({
     this.searchQuery = '',
     this.sortOption = LogPlaySortOption.artistAZ,
   });
-  
+
   LogPlayFilterState copyWith({
     String? searchQuery,
     LogPlaySortOption? sortOption,

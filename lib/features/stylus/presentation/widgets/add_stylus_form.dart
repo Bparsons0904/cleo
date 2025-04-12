@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/theme.dart';
 import '../../../../data/models/models.dart';
 
 /// Data class for stylus form submission
@@ -37,11 +36,11 @@ class AddStylusForm extends StatefulWidget {
 
   /// Constructor
   const AddStylusForm({
-    Key? key,
+    super.key,
     required this.availableStyluses,
     this.initialStylus,
     required this.onSubmit,
-  }) : super(key: key);
+  });
 
   @override
   State<AddStylusForm> createState() => _AddStylusFormState();

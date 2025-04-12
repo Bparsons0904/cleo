@@ -1,6 +1,6 @@
 // lib/features/folders/data/providers/folder_selection_provider.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/di/providers_module.dart';
 import '../../../../data/models/models.dart';
@@ -38,7 +38,7 @@ class SelectedFolderNotifier extends _$SelectedFolderNotifier {
 
 /// Provider for filtered releases based on the selected folder
 @riverpod
-List<Release> filteredReleasesByFolder(FilteredReleasesByFolderRef ref) {
+List<Release> filteredReleasesByFolder(Ref ref) {
   final authState = ref.watch(authStateNotifierProvider);
   final selectedFolderAsync = ref.watch(selectedFolderNotifierProvider);
 
