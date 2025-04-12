@@ -18,7 +18,27 @@ class RecordsPlayedChart extends StatelessWidget {
 
     return LineChart(
       LineChartData(
-        gridData: const FlGridData(show: true, horizontalInterval: 1),
+        // Minimal grid with subtle lines
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          drawHorizontalLine: true,
+          horizontalInterval: 1,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade200,
+              strokeWidth: 1,
+              dashArray: [5, 5], // Dotted lines
+            );
+          },
+          getDrawingVerticalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade200,
+              strokeWidth: 1,
+              dashArray: [5, 5], // Dotted lines
+            );
+          },
+        ),
         titlesData: FlTitlesData(
           rightTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
@@ -71,7 +91,7 @@ class RecordsPlayedChart extends StatelessWidget {
         ),
         borderData: FlBorderData(
           show: true,
-          border: Border.all(color: Colors.grey.shade200, width: 1),
+          border: Border.all(color: Colors.grey.shade100, width: 1),
         ),
         lineBarsData: [
           LineChartBarData(
@@ -80,26 +100,43 @@ class RecordsPlayedChart extends StatelessWidget {
               (index) => FlSpot(index.toDouble(), data[index].count.toDouble()),
             ),
             isCurved: true,
-            color: Colors.blue.shade300,
+            color: Colors.blue.shade400,
             barWidth: 3,
             isStrokeCapRound: true,
             dotData: FlDotData(
               show: true,
               getDotPainter:
                   (spot, percent, barData, index) => FlDotCirclePainter(
-                    radius: 4,
-                    color: Colors.blue,
+                    radius: 5,
+                    color: Colors.blue.shade400,
                     strokeWidth: 1,
                     strokeColor: Colors.white,
                   ),
             ),
             belowBarData: BarAreaData(
-              show: true,
-              color: Colors.blue.shade100.withOpacity(0.3),
+              show: false, // No background fill
             ),
           ),
         ],
         minY: 0,
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            tooltipBgColor: Colors.blueGrey.withOpacity(0.8),
+            getTooltipItems: (List<LineBarSpot> touchedSpots) {
+              return touchedSpots.map((spot) {
+                final index = spot.x.toInt();
+                return LineTooltipItem(
+                  '${data[index].label}: ${spot.y.toInt()} plays',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+          handleBuiltInTouches: true,
+        ),
       ),
     );
   }

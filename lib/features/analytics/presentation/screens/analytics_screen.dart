@@ -368,24 +368,27 @@ class AnalyticsScreen extends ConsumerWidget {
           title,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24), // Increased from 16 to 24
         Container(
           height: 300,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12), // Increased from 8 to 12
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withOpacity(0.08), // More subtle shadow
                 spreadRadius: 1,
-                blurRadius: 3,
-                offset: const Offset(0, 1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24), // Increased from 16 to 24
           child: chart,
         ),
+        const SizedBox(
+          height: 40,
+        ), // Increased from 24 to 40 for more space between sections
       ],
     );
   }

@@ -1,4 +1,5 @@
-// lib/features/analytics/presentation/widgets/analysis_distrubution.dart
+// Complete updated version of DistributionAnalysis class with all necessary methods
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -83,7 +84,7 @@ class DistributionAnalysis extends ConsumerWidget {
             final isMobile = constraints.maxWidth < 600;
 
             if (isMobile) {
-              // Stack charts vertically on mobile
+              // Stack charts vertically on mobile with fixed spacing
               return Column(
                 children: [
                   // Play count distribution
@@ -95,8 +96,7 @@ class DistributionAnalysis extends ConsumerWidget {
                     ref,
                   ),
 
-                  const SizedBox(height: 24),
-
+                  const SizedBox(height: 48), // Fixed spacing between charts
                   // Play duration distribution
                   _buildDistributionSection(
                     context,
@@ -361,29 +361,34 @@ class DistributionAnalysis extends ConsumerWidget {
       return const Center(child: Text('No data available'));
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        // Add a smaller subtitle for "Distribution" if needed
-        Text(
-          data.isNotEmpty
-              ? "${data.entries.first.key} Distribution"
-              : "Distribution",
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 300,
-          child: _buildPieWithLegend(context, data, baseColor, ref),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Title and subtitle
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data.isNotEmpty
+                ? "${data.entries.first.key} Distribution"
+                : "Distribution",
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 82), // More space before chart
+          // Fixed height container for pie chart and legend
+          SizedBox(
+            height: 300, // Fixed height
+            child: _buildPieWithLegend(context, data, baseColor, ref),
+          ),
+          const SizedBox(height: 32), // More space after chart
+        ],
+      ),
     );
   }
 
@@ -399,37 +404,43 @@ class DistributionAnalysis extends ConsumerWidget {
         final isMobile = constraints.maxWidth < 400;
 
         if (isMobile) {
-          // Stack pie and legend vertically on very small screens
-          return Column(
+          // For mobile, use ListView instead of Column to avoid overflow
+          return ListView(
+            physics:
+                const NeverScrollableScrollPhysics(), // Disable scrolling within this ListView
+            shrinkWrap: true, // Important!
             children: [
-              // Pie chart
+              // Pie chart with fixed height
               SizedBox(
                 height: 180,
                 child: _buildPieChart(context, data, baseColor, ref),
               ),
-
               // Legend
-              Expanded(
-                child: SingleChildScrollView(
-                  child: _buildLegend(context, data, baseColor, ref),
-                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 3.0),
+                child: _buildLegend(context, data, baseColor, ref),
               ),
             ],
           );
         } else {
-          // Side by side on larger screens
+          // For larger screens - side by side layout using Row
           return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pie chart (taking 2/3 of the space)
+              // Pie chart - fixed size
               Expanded(
-                flex: 2,
-                child: _buildPieChart(context, data, baseColor, ref),
+                flex: 7, // 70% of width
+                child: SizedBox(
+                  height: 260, // Fixed height
+                  child: _buildPieChart(context, data, baseColor, ref),
+                ),
               ),
 
-              // Legend (taking 1/3 of the space)
+              // Legend with shrinkwrap column
               Expanded(
-                flex: 1,
+                flex: 3, // 30% of width
                 child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(), // Prevents bouncing
                   child: _buildLegend(context, data, baseColor, ref),
                 ),
               ),
@@ -454,8 +465,8 @@ class DistributionAnalysis extends ConsumerWidget {
 
     return PieChart(
       PieChartData(
-        sectionsSpace: 2,
-        centerSpaceRadius: 40,
+        sectionsSpace: 3, // Space between sections
+        centerSpaceRadius: 50, // Center hole size
         sections:
             data.entries.toList().asMap().entries.map((entry) {
               final index = entry.key;
@@ -468,15 +479,25 @@ class DistributionAnalysis extends ConsumerWidget {
                 color: colors[index % colors.length],
                 value: value.toDouble(),
                 title: '${percentage.toStringAsFixed(0)}%',
-                radius: 100,
+                radius: 110,
                 titleStyle: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 2,
+                      color: Colors.black26,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
                 titlePositionPercentageOffset: 0.6,
+                // Add a border to make sections more distinct
+                borderSide: const BorderSide(color: Colors.white, width: 2),
               );
             }).toList(),
+        centerSpaceColor: Colors.transparent,
       ),
     );
   }
@@ -487,55 +508,60 @@ class DistributionAnalysis extends ConsumerWidget {
     Color baseColor,
     WidgetRef ref,
   ) {
-    // Define colors based on the base color (same as pie chart)
+    // Define colors based on the base color
     final List<Color> colors = _generateColors(baseColor, data.length, ref);
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children:
-            data.entries.toList().asMap().entries.map((entry) {
-              final index = entry.key;
-              final key = entry.value.key;
-              final value = entry.value.value;
+    // Use ListView.builder instead of Column for better layout behavior
+    return ListView.builder(
+      shrinkWrap: true, // Important!
+      physics:
+          const NeverScrollableScrollPhysics(), // Disable scrolling of this inner ListView
+      itemCount: data.length,
+      itemBuilder: (context, index) {
+        final entry = data.entries.elementAt(index);
+        final key = entry.key;
+        final value = entry.value;
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: colors[index % colors.length],
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        key,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).textTheme.bodyMedium?.color,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      value.toString(),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3.0), // Reduced padding
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Color indicator
+              Container(
+                width: 10, // Made smaller
+                height: 10, // Made smaller
+                decoration: BoxDecoration(
+                  color: colors[index % colors.length],
+                  shape: BoxShape.circle,
                 ),
-              );
-            }).toList(),
-      ),
+              ),
+              const SizedBox(width: 6), // Made smaller
+              // Label
+              Expanded(
+                child: Text(
+                  key,
+                  style: TextStyle(
+                    fontSize: 11, // Made smaller
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              // Value
+              Text(
+                value.toString(),
+                style: const TextStyle(
+                  fontSize: 11, // Made smaller
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

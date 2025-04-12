@@ -16,12 +16,31 @@ class ListeningTimeChart extends StatelessWidget {
       );
     }
 
+    // Completely rebuilt chart configuration
     return LineChart(
       LineChartData(
-        gridData: const FlGridData(
+        // Minimal grid with subtle lines
+        gridData: FlGridData(
           show: true,
-          horizontalInterval: 60, // 1 hour interval
+          drawVerticalLine: true,
+          drawHorizontalLine: true,
+          horizontalInterval: 60,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade200,
+              strokeWidth: 1,
+              dashArray: [5, 5], // Dotted lines
+            );
+          },
+          getDrawingVerticalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade200,
+              strokeWidth: 1,
+              dashArray: [5, 5], // Dotted lines
+            );
+          },
         ),
+        // Configure titles
         titlesData: FlTitlesData(
           rightTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: false),
@@ -86,10 +105,12 @@ class ListeningTimeChart extends StatelessWidget {
             ),
           ),
         ),
+        // Subtle border around chart area
         borderData: FlBorderData(
           show: true,
-          border: Border.all(color: Colors.grey.shade200, width: 1),
+          border: Border.all(color: Colors.grey.shade100, width: 1),
         ),
+        // Configure the line
         lineBarsData: [
           LineChartBarData(
             spots: List.generate(
@@ -98,26 +119,61 @@ class ListeningTimeChart extends StatelessWidget {
                   FlSpot(index.toDouble(), data[index].duration.toDouble()),
             ),
             isCurved: true,
-            color: Colors.teal.shade300,
+            color: Colors.teal,
             barWidth: 3,
             isStrokeCapRound: true,
+            // Configure the dots
             dotData: FlDotData(
               show: true,
               getDotPainter:
                   (spot, percent, barData, index) => FlDotCirclePainter(
-                    radius: 4,
+                    radius: 5,
                     color: Colors.teal,
                     strokeWidth: 1,
                     strokeColor: Colors.white,
                   ),
             ),
+            // Completely disable any background filling or pattern
             belowBarData: BarAreaData(
-              show: true,
-              color: Colors.teal.shade100.withOpacity(0.3),
+              show: false, // This is the key change - no background fill at all
             ),
           ),
         ],
+        // Start Y-axis at 0
         minY: 0,
+        // Touch interaction settings
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            tooltipBgColor: Colors.blueGrey.withOpacity(0.8),
+            getTooltipItems: (List<LineBarSpot> touchedSpots) {
+              return touchedSpots.map((spot) {
+                final index = spot.x.toInt();
+                final minutes = spot.y.toInt();
+                final hours = minutes ~/ 60;
+                final remainingMinutes = minutes % 60;
+                String timeText = '';
+
+                if (hours > 0) {
+                  timeText = '$hours hours';
+                  if (remainingMinutes > 0) {
+                    timeText += ' $remainingMinutes min';
+                  }
+                } else {
+                  timeText = '$minutes min';
+                }
+
+                return LineTooltipItem(
+                  '${data[index].label}: $timeText',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+          handleBuiltInTouches: true,
+        ),
       ),
     );
   }
