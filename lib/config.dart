@@ -13,7 +13,7 @@ class AppConfig {
   
   // Base URLs that can be overridden
   String _devBaseUrl = 'http://192.168.86.200:38180/api';
-  String _prodBaseUrl = 'http://192.168.86.200:38080/api';
+  String _prodBaseUrl = 'http://192.168.86.203:38080/api';
 
   // Getters
   String get baseUrl => _environment == Environment.development 

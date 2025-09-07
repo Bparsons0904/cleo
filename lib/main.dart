@@ -17,7 +17,7 @@ void main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
   // Initialize app configuration
-  AppConfig().initialize(environment: Environment.development);
+  AppConfig().initialize(environment: Environment.production);
 
   // Create a container to pre-initialize providers
   final container = ProviderContainer(
