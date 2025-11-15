@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 
-import 'config.dart';
+import 'core/config/environment.dart';
 import 'core/di/providers_module.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/theme.dart';
@@ -16,8 +16,8 @@ void main() async {
   // Initialize shared preferences
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  // Initialize app configuration
-  AppConfig().initialize(environment: Environment.production);
+  // Initialize environment configuration
+  EnvironmentConfig().initialize(environment: Environment.local);
 
   // Create a container to pre-initialize providers
   final container = ProviderContainer(
