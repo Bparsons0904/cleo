@@ -30,6 +30,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // OAuth redirect scheme for deep linking
+        manifestPlaceholders["appAuthRedirectScheme"] = "cleo"
     }
 
     buildTypes {
