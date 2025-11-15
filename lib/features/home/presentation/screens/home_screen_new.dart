@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../user/data/providers/user_providers.dart';
+import '../../../collection/data/providers/collection_providers.dart';
 
 /// Updated Home screen with user-focused design
 /// Shows daily recommendation, streak, and quick actions
@@ -12,6 +14,9 @@ class HomeScreenNew extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final user = ref.watch(currentUserProvider);
+    final streak = ref.watch(userStreakProvider);
+    final recommendation = ref.watch(dailyRecommendationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,7 +51,9 @@ class HomeScreenNew extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Welcome back!',
+                    user != null
+                        ? 'Welcome back, ${user.firstName ?? user.fullName}!'
+                        : 'Welcome back!',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -66,13 +73,13 @@ class HomeScreenNew extends ConsumerWidget {
             // Listening Streak Card
             Padding(
               padding: const EdgeInsets.all(CleoSpacing.lg),
-              child: _buildStreakCard(context),
+              child: _buildStreakCard(context, streak),
             ),
 
             // Daily Recommendation
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: CleoSpacing.lg),
-              child: _buildDailyRecommendation(context),
+              child: _buildDailyRecommendation(context, recommendation),
             ),
 
             const SizedBox(height: CleoSpacing.lg),
@@ -103,12 +110,11 @@ class HomeScreenNew extends ConsumerWidget {
     );
   }
 
-  Widget _buildStreakCard(BuildContext context) {
+  Widget _buildStreakCard(BuildContext context, dynamic streak) {
     final theme = Theme.of(context);
 
-    // TODO: Get real streak data from user provider
-    const currentStreak = 0;
-    const longestStreak = 0;
+    final currentStreak = streak?.currentStreakDays ?? 0;
+    final longestStreak = streak?.longestStreakDays ?? 0;
 
     return Card(
       elevation: 2,
@@ -182,13 +188,10 @@ class HomeScreenNew extends ConsumerWidget {
     );
   }
 
-  Widget _buildDailyRecommendation(BuildContext context) {
+  Widget _buildDailyRecommendation(BuildContext context, dynamic recommendation) {
     final theme = Theme.of(context);
 
-    // TODO: Get real recommendation from user provider
-    const hasRecommendation = false;
-
-    if (!hasRecommendation) {
+    if (recommendation == null) {
       return Card(
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -283,7 +286,7 @@ class HomeScreenNew extends ConsumerWidget {
           icon: Icons.sync,
           title: 'Sync',
           color: Colors.indigo,
-          onTap: () => _handleSync(context),
+          onTap: () => _handleSync(context, ref),
         ),
       ],
     );
@@ -339,12 +342,35 @@ class HomeScreenNew extends ConsumerWidget {
     );
   }
 
-  void _handleSync(BuildContext context) {
-    // TODO: Implement sync with SyncRepository
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Sync functionality coming soon'),
-      ),
-    );
+  void _handleSync(BuildContext context, WidgetRef ref) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Syncing with Discogs...'),
+        ),
+      );
+
+      await ref.read(collectionNotifierProvider.notifier).syncCollection();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sync completed successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

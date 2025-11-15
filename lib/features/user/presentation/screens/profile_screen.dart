@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/theme.dart';
-import '../../../core/services/auth_service.dart';
-import '../../../core/routing/app_router.dart';
+import '../../../../core/theme/theme.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../auth/data/providers/auth_providers.dart';
+import '../../data/providers/user_providers.dart';
 
 /// User profile screen
 /// Displays user information and account management options
@@ -41,13 +42,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     setState(() => _isLoggingOut = true);
 
     try {
-      final authService = AuthService();
-      await authService.logout();
+      await ref.read(authStateNotifierProvider.notifier).logout();
 
       if (!mounted) return;
 
-      // Navigate to login screen
-      context.go(AppRoutes.login);
+      // Router will handle navigation based on auth state
     } catch (e) {
       if (!mounted) return;
 
@@ -64,55 +63,69 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final user = ref.watch(currentUserProvider);
+    final isLoading = ref.watch(isUserDataLoadingProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(CleoSpacing.lg),
-        children: [
-          // User Avatar
-          Center(
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: CleoColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person,
-                size: 50,
-                color: Colors.white,
-              ),
-            ),
-          ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(CleoSpacing.lg),
+              children: [
+                // User Avatar
+                Center(
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: CleoColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: user != null && user.fullName.isNotEmpty
+                        ? Center(
+                            child: Text(
+                              user.fullName[0].toUpperCase(),
+                              style: theme.textTheme.displayLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.person,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                  ),
+                ),
 
-          const SizedBox(height: CleoSpacing.lg),
+                const SizedBox(height: CleoSpacing.lg),
 
-          // User Name (placeholder - will be populated from user data)
-          Center(
-            child: Text(
-              'User Name',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+                // User Name
+                Center(
+                  child: Text(
+                    user?.fullName ?? 'Loading...',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
 
-          const SizedBox(height: CleoSpacing.xs),
+                const SizedBox(height: CleoSpacing.xs),
 
-          // User Email (placeholder)
-          Center(
-            child: Text(
-              'user@example.com',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: CleoColors.textSecondary,
-              ),
-            ),
-          ),
+                // User Email
+                Center(
+                  child: Text(
+                    user?.email ?? '',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: CleoColors.textSecondary,
+                    ),
+                  ),
+                ),
 
           const SizedBox(height: CleoSpacing.xxl),
 
@@ -208,10 +221,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       ],
                     ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../data/providers/collection_providers.dart';
+import '../../../../data/models/user_release.dart';
 
 /// Updated collection screen for Waugzee API
 /// Shows user's vinyl collection with search and filtering
@@ -27,14 +29,8 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // TODO: Get actual collection from UserRepository via provider
-    final releases = <dynamic>[]; // Placeholder
-
-    final filteredReleases = releases.where((release) {
-      if (_searchQuery.isEmpty) return true;
-      // TODO: Implement search logic
-      return true;
-    }).toList();
+    // Get filtered collection from provider
+    final filteredReleases = ref.watch(filteredCollectionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,6 +71,9 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
               ),
               onChanged: (value) {
                 setState(() => _searchQuery = value);
+                ref
+                    .read(collectionFilterNotifierProvider.notifier)
+                    .setSearchQuery(value);
               },
             ),
           ),
@@ -168,7 +167,7 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
     );
   }
 
-  Widget _buildCollectionGrid(List<dynamic> releases) {
+  Widget _buildCollectionGrid(List<UserRelease> releases) {
     return GridView.builder(
       padding: const EdgeInsets.all(CleoSpacing.md),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -179,14 +178,21 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
       ),
       itemCount: releases.length,
       itemBuilder: (context, index) {
-        final release = releases[index];
-        return _buildReleaseCard(release);
+        final userRelease = releases[index];
+        return _buildReleaseCard(userRelease);
       },
     );
   }
 
-  Widget _buildReleaseCard(dynamic release) {
-    // TODO: Use actual UserRelease model
+  Widget _buildReleaseCard(UserRelease userRelease) {
+    final release = userRelease.release;
+    final title = release?.title ?? 'Unknown Title';
+    final artist = release?.artists.isNotEmpty == true &&
+            release!.artists.first.artist != null
+        ? release.artists.first.artist!.name
+        : 'Unknown Artist';
+    final imageUrl = release?.coverImage;
+
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
@@ -194,8 +200,9 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to record detail
-          context.push('${AppRoutes.recordDetail}/123');
+          if (release != null) {
+            context.push('${AppRoutes.recordDetail}/${release.id}');
+          }
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,11 +212,23 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
               child: Container(
                 width: double.infinity,
                 color: Colors.grey.shade200,
-                child: Icon(
-                  Icons.album,
-                  size: 48,
-                  color: Colors.grey.shade400,
-                ),
+                child: imageUrl != null
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.album,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          );
+                        },
+                      )
+                    : Icon(
+                        Icons.album,
+                        size: 48,
+                        color: Colors.grey.shade400,
+                      ),
               ),
             ),
             // Release Info
@@ -219,7 +238,7 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Release Title',
+                    title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -229,7 +248,7 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Artist Name',
+                    artist,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -254,13 +273,35 @@ class _CollectionScreenNewState extends ConsumerState<CollectionScreenNew> {
     return 2;
   }
 
-  void _handleSync() {
-    // TODO: Implement sync with SyncRepository
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Syncing with Discogs...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  Future<void> _handleSync() async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Syncing with Discogs...'),
+        ),
+      );
+
+      await ref.read(collectionNotifierProvider.notifier).syncCollection();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sync completed successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

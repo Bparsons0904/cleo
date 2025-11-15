@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/services/auth_service.dart';
-import '../../../core/theme/theme.dart';
+import '../../../../core/theme/theme.dart';
+import '../../data/providers/auth_providers.dart';
 
 /// Login screen for OAuth authentication
 class LoginScreen extends ConsumerStatefulWidget {
@@ -23,14 +23,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      final authService = AuthService();
-      final success = await authService.login();
+      final success = await ref.read(authStateNotifierProvider.notifier).login();
 
       if (!mounted) return;
 
       if (success) {
         // Router will handle navigation based on auth state
-        context.go('/home');
+        // No need to manually navigate, router redirect will handle it
       } else {
         setState(() {
           _errorMessage = 'Login was cancelled or failed. Please try again.';
