@@ -14,21 +14,20 @@ class EnvironmentConfig {
   Environment _environment = Environment.local;
 
   // API Configuration
-  static const String _localApiUrl = 'http://localhost:8288/api';
+  static const String _localApiUrl = 'http://localhost:3021/api';
   static const String _prodApiUrl = 'https://www.waugzee.com/api';
 
-  static const String _localWsUrl = 'ws://localhost:8288/ws';
+  static const String _localWsUrl = 'ws://localhost:3021/ws';
   static const String _prodWsUrl = 'wss://www.waugzee.com/ws';
 
   // OAuth/Zitadel Configuration
   static const String zitadelIssuer = 'https://auth.waugze.com';
   static const String zitadelDiscoveryUrl = '$zitadelIssuer/.well-known/openid-configuration';
 
-  // These should be set from environment variables or build configuration
-  // For now, using placeholders - will be replaced with actual values
+  // OAuth Client ID from Zitadel
   static const String clientId = String.fromEnvironment(
     'ZITADEL_CLIENT_ID',
-    defaultValue: 'YOUR_CLIENT_ID_HERE', // TODO: Replace with actual client ID
+    defaultValue: '346748216215076868',
   );
 
   // OAuth Configuration
