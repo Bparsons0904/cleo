@@ -14,6 +14,8 @@ import '../../features/stylus/presentation/screens/stylus_screen.dart';
 import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/log_play/presentation/screens/log_play_screen.dart';
 import '../../features/log_play/presentation/screens/log_play_detail_screen.dart';
+import '../../features/user/presentation/screens/profile_screen.dart';
+import '../../features/user/presentation/screens/preferences_screen.dart';
 import '../../main.dart';
 import '../widgets/app_scaffold.dart';
 
@@ -143,7 +145,15 @@ GoRouter appRouter(Ref ref) {
             path: AppRoutes.analytics,
             builder: (context, state) => const AnalyticsScreen(),
           ),
+          GoRoute(
+            path: AppRoutes.profile,
+            builder: (context, state) => const ProfileScreen(),
+          ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.preferences,
+        builder: (context, state) => const PreferencesScreen(),
       ),
       GoRoute(
         path: AppRoutes.recordDetail,
