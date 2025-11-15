@@ -7,7 +7,7 @@ import '../../features/auth/data/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/auth_callback_screen.dart';
 import '../../features/collection/presentation/screens/collection_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/home/presentation/screens/home_screen_new.dart';
 import '../../features/play_history/presentation/screens/play_history_screen.dart';
 import '../../features/record_detail/presentation/screens/record_detail_screen.dart';
 import '../../features/stylus/presentation/screens/stylus_screen.dart';
@@ -123,7 +123,7 @@ GoRouter appRouter(Ref ref) {
         routes: [
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) => const HomeScreen(),
+            builder: (context, state) => const HomeScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.logPlay,
