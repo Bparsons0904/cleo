@@ -4,15 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/auth/data/providers/auth_providers.dart';
-import '../../features/auth/presentation/screens/auth_screen.dart';
-import '../../features/collection/presentation/screens/collection_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/play_history/presentation/screens/play_history_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/auth_callback_screen.dart';
+import '../../features/collection/presentation/screens/collection_screen_new.dart';
+import '../../features/home/presentation/screens/home_screen_new.dart';
+import '../../features/play_history/presentation/screens/play_history_screen_new.dart';
 import '../../features/record_detail/presentation/screens/record_detail_screen.dart';
 import '../../features/stylus/presentation/screens/stylus_screen.dart';
-import '../../features/analytics/presentation/screens/analytics_screen.dart';
-import '../../features/log_play/presentation/screens/log_play_screen.dart';
+import '../../features/analytics/presentation/screens/analytics_screen_new.dart';
+import '../../features/log_play/presentation/screens/log_play_screen_new.dart';
 import '../../features/log_play/presentation/screens/log_play_detail_screen.dart';
+import '../../features/user/presentation/screens/profile_screen.dart';
+import '../../features/user/presentation/screens/preferences_screen.dart';
 import '../../main.dart';
 import '../widgets/app_scaffold.dart';
 
@@ -21,7 +24,8 @@ part 'app_router.g.dart';
 /// Router paths for the app
 class AppRoutes {
   static const String splash = '/';
-  static const String auth = '/auth';
+  static const String login = '/login';
+  static const String authCallback = '/auth/callback';
   static const String home = '/home';
   static const String collection = '/collection';
   static const String playHistory = '/play-history';
@@ -29,8 +33,13 @@ class AppRoutes {
   static const String logPlayDetail = '/log-play-detail/:id';
   static const String stylus = '/stylus';
   static const String analytics = '/analytics';
-  static const String settings = '/settings';
+  static const String profile = '/profile';
+  static const String preferences = '/preferences';
   static const String recordDetail = '/record/:id';
+
+  // Legacy route support
+  @Deprecated('Use login instead')
+  static const String auth = '/login';
 }
 
 /// Provider for the previous auth status
@@ -67,25 +76,27 @@ GoRouter appRouter(Ref ref) {
       }
       
       // Simplified redirect logic based on auth status
-      final bool isAuthRoute = state.matchedLocation == AppRoutes.auth;
+      final bool isLoginRoute = state.matchedLocation == AppRoutes.login;
+      final bool isAuthCallbackRoute = state.matchedLocation == AppRoutes.authCallback;
       final bool isSplashRoute = state.matchedLocation == AppRoutes.splash;
-      
-      // If not authenticated and not on auth or splash screen, go to auth
-      if (authStatus == AuthenticationStatus.unauthenticated && 
-          !isAuthRoute && 
+
+      // If not authenticated and not on login, callback, or splash screen, go to login
+      if (authStatus == AuthenticationStatus.unauthenticated &&
+          !isLoginRoute &&
+          !isAuthCallbackRoute &&
           !isSplashRoute) {
-        return AppRoutes.auth;
+        return AppRoutes.login;
       }
-      
-      // If authenticated and on auth or splash screen, go to home
-      if (authStatus == AuthenticationStatus.authenticated && 
-          (isAuthRoute || isSplashRoute)) {
+
+      // If authenticated and on login, callback, or splash screen, go to home
+      if (authStatus == AuthenticationStatus.authenticated &&
+          (isLoginRoute || isAuthCallbackRoute || isSplashRoute)) {
         return AppRoutes.home;
       }
-      
-      // If there's an error with auth, go to auth screen
-      if (authStatus == AuthenticationStatus.error && !isAuthRoute) {
-        return AppRoutes.auth;
+
+      // If there's an error with auth, go to login screen
+      if (authStatus == AuthenticationStatus.error && !isLoginRoute) {
+        return AppRoutes.login;
       }
       
       // No redirect needed
@@ -98,8 +109,12 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
-        path: AppRoutes.auth,
-        builder: (context, state) => const AuthScreen(),
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.authCallback,
+        builder: (context, state) => const AuthCallbackScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) {
@@ -108,19 +123,19 @@ GoRouter appRouter(Ref ref) {
         routes: [
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) => const HomeScreen(),
+            builder: (context, state) => const HomeScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.logPlay,
-            builder: (context, state) => const LogPlayScreen(),
+            builder: (context, state) => const LogPlayScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.collection,
-            builder: (context, state) => const CollectionScreen(),
+            builder: (context, state) => const CollectionScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.playHistory,
-            builder: (context, state) => const PlayHistoryScreen(),
+            builder: (context, state) => const PlayHistoryScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.stylus,
@@ -128,9 +143,17 @@ GoRouter appRouter(Ref ref) {
           ),
           GoRoute(
             path: AppRoutes.analytics,
-            builder: (context, state) => const AnalyticsScreen(),
+            builder: (context, state) => const AnalyticsScreenNew(),
+          ),
+          GoRoute(
+            path: AppRoutes.profile,
+            builder: (context, state) => const ProfileScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.preferences,
+        builder: (context, state) => const PreferencesScreen(),
       ),
       GoRoute(
         path: AppRoutes.recordDetail,
