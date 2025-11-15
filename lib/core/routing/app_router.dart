@@ -6,13 +6,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/auth/data/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/auth_callback_screen.dart';
-import '../../features/collection/presentation/screens/collection_screen.dart';
+import '../../features/collection/presentation/screens/collection_screen_new.dart';
 import '../../features/home/presentation/screens/home_screen_new.dart';
-import '../../features/play_history/presentation/screens/play_history_screen.dart';
+import '../../features/play_history/presentation/screens/play_history_screen_new.dart';
 import '../../features/record_detail/presentation/screens/record_detail_screen.dart';
 import '../../features/stylus/presentation/screens/stylus_screen.dart';
-import '../../features/analytics/presentation/screens/analytics_screen.dart';
-import '../../features/log_play/presentation/screens/log_play_screen.dart';
+import '../../features/analytics/presentation/screens/analytics_screen_new.dart';
+import '../../features/log_play/presentation/screens/log_play_screen_new.dart';
 import '../../features/log_play/presentation/screens/log_play_detail_screen.dart';
 import '../../features/user/presentation/screens/profile_screen.dart';
 import '../../features/user/presentation/screens/preferences_screen.dart';
@@ -127,15 +127,15 @@ GoRouter appRouter(Ref ref) {
           ),
           GoRoute(
             path: AppRoutes.logPlay,
-            builder: (context, state) => const LogPlayScreen(),
+            builder: (context, state) => const LogPlayScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.collection,
-            builder: (context, state) => const CollectionScreen(),
+            builder: (context, state) => const CollectionScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.playHistory,
-            builder: (context, state) => const PlayHistoryScreen(),
+            builder: (context, state) => const PlayHistoryScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.stylus,
@@ -143,7 +143,7 @@ GoRouter appRouter(Ref ref) {
           ),
           GoRoute(
             path: AppRoutes.analytics,
-            builder: (context, state) => const AnalyticsScreen(),
+            builder: (context, state) => const AnalyticsScreenNew(),
           ),
           GoRoute(
             path: AppRoutes.profile,
