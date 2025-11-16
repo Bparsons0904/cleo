@@ -53,7 +53,11 @@ lib/
 
 - Flutter SDK (version 3.0.0 or later)
 - Dart SDK (version 3.0.0 or later)
-- Android Studio or Visual Studio Code with Flutter extensions
+- For development: Any editor with Flutter support (Android Studio, VS Code, Neovim, etc.)
+
+**Platform-Specific Setup:**
+- **Linux (CachyOS/Arch)**: See [LINUX_SETUP.md](LINUX_SETUP.md) for detailed setup instructions
+- **Windows/macOS**: Follow the [official Flutter installation guide](https://docs.flutter.dev/get-started/install)
 
 ### Installation
 
