@@ -75,14 +75,14 @@ class UserRepository {
 
   /// Update user's selected folder
   ///
-  /// [folderId] - Discogs folder ID to set as selected
-  Future<void> updateSelectedFolder(int folderId) async {
+  /// [folderId] - UUID of the folder to set as selected
+  Future<void> updateSelectedFolder(String folderId) async {
     try {
       _logger.i('📁 Updating selected folder to: $folderId');
 
       final response = await _apiClient.put(
         '/users/me/folder',
-        data: {'selectedFolderId': folderId},
+        data: {'folderId': folderId},
       );
 
       if (response.statusCode == 200) {

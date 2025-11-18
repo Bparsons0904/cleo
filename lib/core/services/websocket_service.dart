@@ -6,43 +6,58 @@ import '../config/environment.dart';
 import 'auth_service.dart';
 
 /// WebSocket message model
+/// Matches Waugzee server message structure
 class WebSocketMessage {
-  final String id;
-  final String service;
-  final String event;
+  final String? id;
+  final String type;
+  final String? channel;
+  final String? action;
   final String? userId;
-  final Map<String, dynamic> payload;
-  final DateTime timestamp;
+  final dynamic data;
+  final DateTime? timestamp;
 
   WebSocketMessage({
-    required this.id,
-    required this.service,
-    required this.event,
+    this.id,
+    required this.type,
+    this.channel,
+    this.action,
     this.userId,
-    required this.payload,
-    required this.timestamp,
+    this.data,
+    this.timestamp,
   });
 
   factory WebSocketMessage.fromJson(Map<String, dynamic> json) {
     return WebSocketMessage(
-      id: json['id'] ?? '',
-      service: json['service'] ?? 'unknown',
-      event: json['event'] ?? 'unknown',
+      id: json['id'],
+      type: json['type'] ?? 'UNKNOWN',
+      channel: json['channel'],
+      action: json['action'],
       userId: json['userId'],
-      payload: json['payload'] ?? {},
-      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+      data: json['data'],
+      timestamp: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'service': service,
-      'event': event,
+      if (id != null) 'id': id,
+      'type': type,
+      if (channel != null) 'channel': channel,
+      if (action != null) 'action': action,
       if (userId != null) 'userId': userId,
-      'payload': payload,
-      'timestamp': timestamp.toIso8601String(),
+      if (data != null) 'data': data,
+      if (timestamp != null) 'timestamp': timestamp!.toIso8601String(),
     };
+  }
+
+  /// Helper to get data as Map
+  Map<String, dynamic> get dataAsMap {
+    if (data is Map<String, dynamic>) {
+      return data as Map<String, dynamic>;
+    }
+    return {};
   }
 }
 
@@ -125,10 +140,10 @@ class WebSocketService {
       final json = jsonDecode(data);
       final message = WebSocketMessage.fromJson(json);
 
-      _logger.d('📨 Received: ${message.event} from ${message.service}');
+      _logger.d('📨 Received: ${message.type}');
 
-      // Handle system messages
-      if (message.service == 'system') {
+      // Handle authentication and system messages
+      if (_isSystemMessage(message.type)) {
         _handleSystemMessage(message);
       } else {
         // Broadcast to listeners
@@ -139,31 +154,43 @@ class WebSocketService {
     }
   }
 
+  /// Check if message type is a system message
+  bool _isSystemMessage(String type) {
+    const systemTypes = [
+      'AUTH_REQUEST',
+      'AUTH_SUCCESS',
+      'AUTH_FAILURE',
+      'MESSAGE_TYPE_PING',
+      'MESSAGE_TYPE_PONG',
+    ];
+    return systemTypes.contains(type);
+  }
+
   /// Handle system messages (auth, ping/pong)
   void _handleSystemMessage(WebSocketMessage message) {
-    switch (message.event) {
-      case 'auth_request':
+    switch (message.type) {
+      case 'AUTH_REQUEST':
         _handleAuthRequest();
         break;
 
-      case 'auth_success':
+      case 'AUTH_SUCCESS':
         _handleAuthSuccess(message);
         break;
 
-      case 'auth_failure':
+      case 'AUTH_FAILURE':
         _handleAuthFailure(message);
         break;
 
-      case 'ping':
+      case 'MESSAGE_TYPE_PING':
         _handlePing(message);
         break;
 
-      case 'pong':
+      case 'MESSAGE_TYPE_PONG':
         _logger.d('🏓 Received pong');
         break;
 
       default:
-        _logger.d('📨 System message: ${message.event}');
+        _logger.d('📨 System message: ${message.type}');
         _messageController.add(message);
     }
   }
@@ -181,12 +208,10 @@ class WebSocketService {
         return;
       }
 
-      // Send auth response
+      // Send auth response with token as direct payload
       final authMessage = {
-        'event': 'auth_response',
-        'payload': {
-          'token': token,
-        },
+        'type': 'AUTH_RESPONSE',
+        'payload': token,
       };
 
       _send(authMessage);
@@ -220,8 +245,8 @@ class WebSocketService {
 
     // Send pong response
     final pongMessage = {
-      'event': 'pong',
-      'payload': {},
+      'type': 'MESSAGE_TYPE_PONG',
+      'data': {},
     };
 
     _send(pongMessage);
@@ -234,8 +259,8 @@ class WebSocketService {
       if (_state == WebSocketState.connected) {
         _logger.d('🏓 Sending ping');
         _send({
-          'event': 'ping',
-          'payload': {},
+          'type': 'MESSAGE_TYPE_PING',
+          'data': {},
         });
       }
     });
@@ -251,7 +276,7 @@ class WebSocketService {
     try {
       final json = jsonEncode(data);
       _channel!.sink.add(json);
-      _logger.d('📤 Sent: ${data['event']}');
+      _logger.d('📤 Sent: ${data['type']}');
     } catch (e, stackTrace) {
       _logger.e('❌ Error sending message', error: e, stackTrace: stackTrace);
     }
@@ -259,12 +284,14 @@ class WebSocketService {
 
   /// Send a custom message
   void sendMessage({
-    required String event,
-    Map<String, dynamic>? payload,
+    required String type,
+    Map<String, dynamic>? data,
+    String? action,
   }) {
     _send({
-      'event': event,
-      'payload': payload ?? {},
+      'type': type,
+      if (data != null) 'data': data,
+      if (action != null) 'action': action,
     });
   }
 

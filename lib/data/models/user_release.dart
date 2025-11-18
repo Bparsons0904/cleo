@@ -11,12 +11,12 @@ part 'user_release.g.dart';
 @freezed
 class UserRelease with _$UserRelease {
   const factory UserRelease({
-    required String id, // UUID
-    required String userId, // UUID
-    required int releaseId, // Discogs release ID
-    Release? release, // Full release details
-    required int instanceId, // Discogs instance ID
-    required int folderId, // Discogs folder ID
+    required String id, // UUID - primary key
+    required String userId, // UUID - foreign key to users
+    required int releaseId, // Discogs release ID (int64)
+    Release? release, // Full release details (nested)
+    required String instanceId, // Unique instance identifier (string)
+    String? folderId, // UUID - foreign key to folders (nullable)
     @Default(0) int rating,
     Map<String, dynamic>? notes, // JSONB
     DateTime? dateAdded,

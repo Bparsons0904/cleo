@@ -1,4 +1,6 @@
 // lib/data/models/release.dart - optimized version
+// TODO: Migrate to freezed for consistency with other models
+// This model works but should be refactored to use @freezed annotation
 import 'models.dart';
 
 class Release {

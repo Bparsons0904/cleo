@@ -14,10 +14,10 @@ class EnvironmentConfig {
   Environment _environment = Environment.local;
 
   // API Configuration
-  static const String _localApiUrl = 'http://localhost:3021/api';
+  static const String _localApiUrl = 'http://localhost:8288/api';
   static const String _prodApiUrl = 'https://www.waugzee.com/api';
 
-  static const String _localWsUrl = 'ws://localhost:3021/ws';
+  static const String _localWsUrl = 'ws://localhost:8288/ws';
   static const String _prodWsUrl = 'wss://www.waugzee.com/ws';
 
   // OAuth/Zitadel Configuration
