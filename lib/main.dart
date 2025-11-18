@@ -28,10 +28,9 @@ void main() async {
   );
 
   // Pre-initialize auth state before showing any UI
-  print('🔐 Pre-initializing auth state...');
-  await container
-      .read(authStateNotifierProvider.notifier)
-      .checkInitialAuthStatus();
+  // The provider automatically checks auth status in build() method
+  print('🔐 Initializing auth state...');
+  await container.read(authStateNotifierProvider.future);
   print('🔐 Auth state initialized!');
 
   runApp(

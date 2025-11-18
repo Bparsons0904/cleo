@@ -79,26 +79,31 @@ class WebSocketState extends _$WebSocketState {
       await wsService.connect();
 
       // Listen to connection state changes
-      wsService.connectionState.listen((wsState) {
+      wsService.stateStream.listen((wsState) {
         switch (wsState) {
-          case ConnectionState.disconnected:
+          case WebSocketState.disconnected:
             state = const WebSocketStateData(
               state: WebSocketConnectionState.disconnected,
             );
             break;
-          case ConnectionState.connecting:
+          case WebSocketState.connecting:
             state = const WebSocketStateData(
               state: WebSocketConnectionState.connecting,
             );
             break;
-          case ConnectionState.connected:
+          case WebSocketState.authenticating:
             state = const WebSocketStateData(
-              state: WebSocketConnectionState.connected,
+              state: WebSocketConnectionState.connecting,
             );
             break;
-          case ConnectionState.authenticated:
+          case WebSocketState.connected:
             state = const WebSocketStateData(
               state: WebSocketConnectionState.authenticated,
+            );
+            break;
+          case WebSocketState.error:
+            state = const WebSocketStateData(
+              state: WebSocketConnectionState.error,
             );
             break;
         }
@@ -107,7 +112,7 @@ class WebSocketState extends _$WebSocketState {
       // Listen to messages
       wsService.messages.listen((message) {
         if (state.state == WebSocketConnectionState.authenticated) {
-          state = state.copyWith(lastMessage: message);
+          state = state.copyWith(lastMessage: message.toJson());
           _handleMessage(message);
         }
       });
@@ -123,10 +128,10 @@ class WebSocketState extends _$WebSocketState {
   }
 
   /// Disconnect from WebSocket
-  Future<void> _disconnect() async {
+  void _disconnect() {
     try {
       final wsService = ref.read(webSocketServiceProvider);
-      await wsService.disconnect();
+      wsService.disconnect();
 
       state = const WebSocketStateData(
         state: WebSocketConnectionState.disconnected,
@@ -139,63 +144,65 @@ class WebSocketState extends _$WebSocketState {
   }
 
   /// Handle incoming WebSocket messages
-  void _handleMessage(Map<String, dynamic> message) {
-    final event = message['event'] as String?;
-    final payload = message['payload'] as Map<String, dynamic>?;
+  void _handleMessage(WebSocketMessage message) {
+    final type = message.type;
+    final data = message.dataAsMap;
 
-    print('📨 WebSocket message: $event');
+    print('📨 WebSocket message: $type');
 
-    switch (event) {
-      case 'collection_updated':
-        // Refresh user data when collection is updated
-        print('🔄 Collection updated, refreshing user data...');
-        // TODO: Refresh user data provider
-        break;
-
-      case 'play_added':
-        // Refresh play history
-        print('🔄 Play added, refreshing play history...');
-        // TODO: Refresh play history provider
-        break;
-
-      case 'recommendation_ready':
-        // Refresh daily recommendation
-        print('🔄 Recommendation ready, refreshing...');
-        // TODO: Refresh recommendation provider
-        break;
-
-      case 'sync_progress':
+    switch (type) {
+      case 'SYNC_PROGRESS':
         // Update sync progress
-        if (payload != null) {
-          final progress = payload['progress'] as int?;
-          final total = payload['total'] as int?;
+        if (data.isNotEmpty) {
+          final progress = data['progress'] as int?;
+          final total = data['total'] as int?;
           print('📊 Sync progress: $progress / $total');
         }
         break;
 
-      case 'sync_complete':
+      case 'SYNC_COMPLETE':
         // Sync completed, refresh user data
         print('✅ Sync complete, refreshing user data...');
         // TODO: Refresh user data provider
         break;
 
-      case 'error':
+      case 'API_PROGRESS':
+        // API operation progress
+        if (data.isNotEmpty) {
+          final progress = data['progress'] as int?;
+          final total = data['total'] as int?;
+          print('📊 API progress: $progress / $total');
+        }
+        break;
+
+      case 'API_COMPLETE':
+        // API operation completed
+        print('✅ API operation complete');
+        break;
+
+      case 'API_ERROR':
         // Handle error message
-        final errorMsg = payload?['message'] as String?;
+        final errorMsg = data['message'] as String?;
         print('❌ WebSocket error: $errorMsg');
         state = state.copyWith(error: errorMsg);
         break;
 
       default:
-        print('ℹ️ Unknown WebSocket event: $event');
+        print('ℹ️ Unknown WebSocket message type: $type');
     }
   }
 
   /// Send a message through WebSocket
-  Future<void> sendMessage(Map<String, dynamic> message) async {
+  void sendMessage({
+    required String type,
+    Map<String, dynamic>? data,
+  }) {
     try {
       final wsService = ref.read(webSocketServiceProvider);
-      wsService.send(message);
+      wsService.sendMessage(
+        type: type,
+        data: data,
+      );
     } catch (e) {
       print('⚠️ Error sending WebSocket message: $e');
     }
@@ -203,7 +210,7 @@ class WebSocketState extends _$WebSocketState {
 
   /// Manually reconnect
   Future<void> reconnect() async {
-    await _disconnect();
+    _disconnect();
     await _connect();
   }
 }
